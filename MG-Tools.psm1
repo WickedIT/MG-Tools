@@ -1,4 +1,4 @@
-﻿<#
+<#
 Random password generator.
 ############################################################################
 #>
@@ -15,7 +15,7 @@ Injects 72 characters to the Get-Random CMDlet to produce a string, then convert
 Use an length you see fit, no restriction is in place for length.
 
 .EXAMPLE
-Call-RandomPassword -Count 10
+PS>Call-RandomPassword -Count 10
 
 #>
     param(
@@ -67,12 +67,12 @@ Passes specific groups to be added to the new user that are outside the scope of
 .EXAMPLE
 Will prompt each mandatory parameter (which is all except Groups).
 
-PS>Call-NewAduser
+PS> Call-NewAduser
 
 .EXAMPLE
 Add multiple users from a CSV with all mandatory parameters included.
 
-PS>Import-CSV .\users.csv | Call-NewADUser
+PS> Import-CSV .\users.csv | Call-NewADUser
 
 
 #>
@@ -285,7 +285,7 @@ Specifies the computername variable. No default value but 'localhost' is accepte
 PS> Call-DriveCleanup -computername 'localhost'
 
 .EXAMPLE
-PS>Get-ADComputer -filter "name -like '*'" | Call-DriveCleanUp
+PS> Get-ADComputer -filter "name -like '*'" | Call-DriveCleanUp
 
 #>
     [CmdletBinding(SupportsShouldProcess=$True)]
