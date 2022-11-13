@@ -104,47 +104,84 @@ PS> Import-CSV .\users.csv | Call-NewADUser
     }
 
     PROCESS {
-        foreach ($user in $_){
-            #Calls password thats 10 characters long
-            $pw = Call-RandomPassword -Length 10
-            #Converts the pw to a securestring
-            $spw = ConvertTo-SecureString $pw -AsPlainText -Force
-            #collects the SourceUsers AD information to be copied from
-            $SourceUserInfo = Get-ADUser -Identity $user.SourceUser -Properties Title,Department | select samaccountname, Distinguishedname, Title, Department #Applies the SourceUserInfo to progagate the Title, Department, and Path.
+        if ($null -ne $_) {
+            foreach ($user in $_){
+                $pw = Call-RandomPassword -Length 10 #Calls password thats 10 characters long
+                $spw = ConvertTo-SecureString $pw -AsPlainText -Force #Converts the pw to a securestring
+                $SourceUserInfo = Get-ADUser -Identity $user.SourceUser -Properties Title,Department | select samaccountname, Distinguishedname, Title, Department #Applies the SourceUserInfo to progagate the Title, Department, and Path.
+                $title = $SourceUserInfo.Title
+                $department = $SourceUserInfo.Department
+                $SourceDistinguishedName = (($SourceUserInfo.Distinguishedname).split(',')) #Calls the DistinguishedName of the SourceUser to a variable and splits each section into objects
+                $First, $Rest = $SourceDistinguishedName #assigns the CN entry to the first variable and assigns the rest to the rest variable
+                $Path = $Rest -join ',' #loads the remaining objects and rejoins them to use as a path for the new user
+                $FirstLast = $user.FirstName[0] + $user.LastName #Joins the first letter of firstname and lastname
+                $email = "$($FirstLast)@mfgwickedit.onmicrosoft.com" #Creates the email entry.
+                $sourceusergroups = Get-ADPrincipalGroupMembership -Identity $SourceUserInfo.SamAccountName | select -ExpandProperty samaccountname #Creates a joined string of all of the groups the SourceUser is a member of.
+                #
+                New-ADUser -Name $FirstLast -SamAccountName $FirstLast -GivenName $user.FirstName -Surname $user.LastName -Title $title -Department $department -Path $path -EmailAddress $email -AccountPassword $spw -Enabled $true #Actual use of New-ADUser with all parameters and variables
+                #
+                $properties = [ordered]@{Name=$user.FirstName + ' ' + $user.LastName #Display a list of user properties.
+                                         Title=$title
+                                         Department=$department
+                                         Password=$pw
+                                         Email=$email
+                                         Groups=($sourceusergroups) -Join ', '
+                                         SourceUser=$user.SourceUser
+                }
+                $obj = New-Object -TypeName psobject -Property $properties #Passes properties to variable
+                if ($user.groups -ne $null) { #checks for values in groups# 
+                    foreach ($group in $groups) {
+                        Add-ADGroupMember -Identity $group -Members $FirstLast -ErrorAction SilentlyContinue #allows for seperatre groups to be added
+                    }
+                }
+                elseif ($user.SourceUser -ne $null) {  #checks for value in Sourceuser#
+                    foreach ($sourceusergroup in $sourceusergroups) {
+                        Add-ADGroupMember -Identity $sourceusergroup -Members $FirstLast -ErrorAction SilentlyContinue #adds groups from the source user
+                    }
+                }
+                Write-Output $obj # writes the output of the user properties
+            }
+        }
+        else {
+            $pw = Call-RandomPassword -Length 10 #Calls password thats 10 characters long
+            $spw = ConvertTo-SecureString $pw -AsPlainText -Force #Converts the pw to a securestring
+            $SourceUserInfo = Get-ADUser -Identity $SourceUser -Properties Title,Department | select samaccountname, Distinguishedname, Title, Department #Applies the SourceUserInfo to progagate the Title, Department, and Path.
             $title = $SourceUserInfo.Title
             $department = $SourceUserInfo.Department
-            $path = (($SourceUserInfo.Distinguishedname).split(','))[1,2,3,4,5] -join ',' #Uses the distinguished name of the SourceUser and drops the CN entry from the string
-            $FirstLast = $user.FirstName[0] + $user.LastName #Joins the first letter of firstname and lastname
+            $SourceDistinguishedName = (($SourceUserInfo.Distinguishedname).split(',')) #Calls the DistinguishedName of the SourceUser to a variable and splits each section into objects
+            $First, $Rest = $SourceDistinguishedName #assigns the CN entry to the first variable and assigns the rest to the rest variable
+            $Path = $Rest -join ',' #loads the remaining objects and rejoins them to use as a path for the new user
+            $FirstLast = $FirstName[0] + $LastName #Joins the first letter of firstname and lastname
             $email = "$($FirstLast)@mfgwickedit.onmicrosoft.com" #Creates the email entry.
             $sourceusergroups = Get-ADPrincipalGroupMembership -Identity $SourceUserInfo.SamAccountName | select -ExpandProperty samaccountname #Creates a joined string of all of the groups the SourceUser is a member of.
             #
-            New-ADUser -Name $FirstLast -SamAccountName $FirstLast -GivenName $user.FirstName -Surname $user.LastName -Title $title -Department $department -Path $path -EmailAddress $email -AccountPassword $spw -Enabled $true #Actual use of New-ADUser with all parameters and variables
+            New-ADUser -Name $FirstLast -SamAccountName $FirstLast -GivenName $FirstName -Surname $LastName -Title $title -Department $department -Path $path -EmailAddress $email -AccountPassword $spw -Enabled $true #Actual use of New-ADUser with all parameters and variables
             #
-            $properties = [ordered]@{Name=$user.FirstName + ' ' + $user.LastName #Display a list of 
-                           Title=$title
-                           Department=$department
-                           Password=$pw
-                           Email=$email
-                           Groups=($sourceusergroups) -Join ', '
-                           SourceUser=$user.SourceUser
+            $properties = [ordered]@{Name=$FirstName + ' ' + $LastName #Display a list of user properties.
+                                     Title=$title
+                                     Department=$department
+                                     Password=$pw
+                                     Email=$email
+                                     Groups=($sourceusergroups) -Join ', '
+                                     SourceUser=$SourceUser
             }
-            $obj = New-Object -TypeName psobject -Property $properties
-            if ($user.groups -ne $null) {
+            $obj = New-Object -TypeName psobject -Property $properties #Passes properties to variable
+            if ($user.groups -ne $null) { #checks for values in groups# 
                 foreach ($group in $groups) {
-                    Add-ADGroupMember -Identity $group -Members $FirstLast -ErrorAction SilentlyContinue
+                    Add-ADGroupMember -Identity $group -Members $FirstLast -ErrorAction SilentlyContinue #allows for seperatre groups to be added
                 }
             }
-            elseif ($user.SourceUser -ne $null) {
+            elseif ($user.SourceUser -ne $null) {  #checks for value in Sourceuser#
                 foreach ($sourceusergroup in $sourceusergroups) {
-                    Add-ADGroupMember -Identity $sourceusergroup -Members $FirstLast -ErrorAction SilentlyContinue
+                    Add-ADGroupMember -Identity $sourceusergroup -Members $FirstLast -ErrorAction SilentlyContinue #adds groups from the source user
                 }
             }
-            Write-Output $obj
-        }
+            Write-Output $obj # writes the output of the user properties
 
     }
+}
     END {
-        $pw | clip
+        $pw | clip #passes the password to the clipboard
     }
 }
 New-Alias nadu Call-NewADUser
@@ -164,8 +201,9 @@ function Set-DriveCleanupOptions {
                         Path        = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\*'
                         Name        = 'StateFlags0001'
                         ErrorAction = 'SilentlyContinue'
+                        
         }
-        Get-ItemProperty @CurrentItemSet | Remove-ItemProperty -Name StateFlags0001 -ErrorAction SilentlyContinue
+        Get-ItemProperty @CurrentItemSet | Remove-ItemProperty -Name StateFlags0001 -ErrorAction SilentlyContinue #Pushes the StateFlag001 switch to be removed from every subpath in VolumeCaches if it exists
 
     }
     PROCESS {
@@ -202,6 +240,7 @@ function Set-DriveCleanupOptions {
             'Windows Error Reporting System Queue Files',
             'Windows ESD installation files',
             'Windows Upgrade Log Files'
+            #Puts all DiskClean switches into a variable
         )
         foreach ($Switch in $Switches) {
             $newItemSet = @{
@@ -210,8 +249,9 @@ function Set-DriveCleanupOptions {
                         Value        = 1
                         PropertyType = 'DWord'
                         ErrorAction  = 'SilentlyContinue'
+                        #Sets the new details for the StateFlags001 switch
             }
-            New-ItemProperty @newItemSet | Out-Null
+            New-ItemProperty @newItemSet | Out-Null # applies newitemset to each folder in volumecaches
         }
     }
     END {
@@ -221,6 +261,7 @@ function Set-DriveCleanupOptions {
 
 function WorkDriveCleanUp {
     param(
+        $VerbosePreference = 'Continue',
         [Parameter(Mandatory=$True,
                    ValueFromPipeline=$True,
                    ValueFromPipelinebyPropertyName=$True
@@ -228,11 +269,11 @@ function WorkDriveCleanUp {
         $computername
     )
     BEGIN {
-        $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem | select -ExpandProperty LastBootUpTime
+        $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem | select -ExpandProperty LastBootUpTime #grabs time since last boot
         $currentdate = Get-Date
         $continue = $false
         $restart = $false
-        if (($currentdate - $lastboot | select -ExpandProperty 'Days') -eq '0') {
+        if (($currentdate - $lastboot | select -ExpandProperty 'Days') -eq '0') { #checks to see if Lastbootuptime is less than 1 day
             $continue = $true
         }
         else {
@@ -241,7 +282,7 @@ function WorkDriveCleanUp {
 
     }
     PROCESS {
-        if ($restart) {
+        if ($restart) { #if lastboot is greater than 0 days, prompt for restart
                 Write-Verbose "This computer: '$computername' needs to be restarted before continuing."
                 $yesorno = Read-Host "Do you want to restart? For yes (y) for no (n)"
                 if ($yesorno -eq 'y') {
@@ -251,15 +292,15 @@ function WorkDriveCleanUp {
                 Write-Verbose "Please restart computer: '$computername' when available, and run the script again."
                 }
         }
-        $disks = Get-CimInstance -ClassName Win32_LogicalDisk -ComputerName $computername -Filter "DeviceID='C:'"
-   [int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int]
-        if ($continue) {   
-            if ($percentavail -in 11..80) {
+        $disks = Get-CimInstance -ClassName Win32_LogicalDisk -ComputerName $computername -Filter "DeviceID='C:'" #get primary disk info
+   [int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int] #take disk info and form it into percentage
+        if ($continue) {  #if lastboot is = 0 then run disk cleanup
+            if ($percentavail -in 11..80) { #if the integer of percentleft fits into range, run clean
                 #Run Disk Cleanup
-                Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:1' -WindowStyle Hidden
+                Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:1' -WindowStyle Hidden #/sagerun:1 runs the StateFlags001 switches
                 Write-Verbose "Drive Percent Left is: '$percentavail', make necessary changes to Disk Clean Tool options."
             }
-            elseif ($percentavail -in 0..10) {
+            elseif ($percentavail -in 0..10) { #if the integer of percentleft fits into this range as well, prompt for further discovery
                 $computername | Out-File Comp_Drive_Full.txt -Append
                 Write-Verbose "Check the Comp_Drive_Full text file."
             }
@@ -298,52 +339,48 @@ PS> Get-ADComputer -filter "name -like '*'" | Call-DriveCleanUp
     $computername
     )
     BEGIN {
-        $VerbosePreference = 'Continue'
-        $credential = Get-Credential -Message "If not Q'ing AD computers, ignore credential request."
+        $credential = Get-Credential -Message "If not Q'ing AD computers, ignore credential request." #get credential or ignore if localhost
         del .\Comp_No_Connection.txt -ea SilentlyContinue
         del .\Comp_Drive_Full.txt -ea SilentlyContinue
         
     }
     PROCESS {
         $currentdate = Get-Date
-        if ($computername -ne 'localhost') {
+        if ($computername -ne 'localhost') { #if querying several computers, try running sessions
             foreach ($computer in $computername) {
-                try {
-                    $session = New-PSSession -ComputerName $computer -Credential $credential -ea SilentlyContinue
-                    $cimsession = New-CimSession -ComputerName $computer -Credential $credential -ea SilentlyContinue
-                    $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem -CimSession $cimsession | select -ExpandProperty LastBootUpTime
-                    $disks = Get-CimInstance -ClassName Win32_LogicalDisk -CimSession $cimsession -Filter "DeviceID='C:'"
-                    [int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int]
-                    $properties = @{Computername = "$computer"
-                                    Status = "Connected"
-                                    DriveAvail = "% $percentavail"
-                                    Uptime = "$lastboot"
-                                    }
-                }
-                catch {
+                if ((Test-NetConnection -ComputerName $Computer -CommonTCPPort WinRM).TcpTestSucceeded) {#test TCP connection
+                    $session = New-PSSession -ComputerName $computer -Credential $credential -ea SilentlyContinue #new pssession
+                    $cimsession = New-CimSession -ComputerName $computer -Credential $credential -ea SilentlyContinue #new cimsession
+                    $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem -CimSession $cimsession | select -ExpandProperty LastBootUpTime | select Days,Hours,Minutes #grap last boot up time
+                    $disks = Get-CimInstance -ClassName Win32_LogicalDisk -CimSession $cimsession -Filter "DeviceID='C:'" #grab primary disk info
+                    [int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int] #convert disk available to percentage
+                    $properties = [Ordered]@{Computername = "$computer"
+                                             Status = "Connected"
+                                             DriveAvail = "% $percentavail"
+                                             Uptime = "$lastboot"
+                                             }
+                } #display computer info in an object
+                else {
                     $computer | Out-File Comp_No_Connection.txt -Append
-                    $properties = @{Computername = "$computer"
-                                    Status = "Disconnected"
-                                    }
-                }
-                finally {
+                    $properties = [Ordered]@{Computername = "$computer"
+                                                   Status = "Disconnected"
+                                             }
+                } #display alternate computer info for failed computers
                     $obj = New-Object -TypeName psobject -Property $properties
                     Write-Output $obj
-                    Invoke-Command -Session $session -ScriptBlock ${function:Set-DriveCleanupOptions}
-                    Invoke-Command -Session $session -ScriptBlock ${function:WorkDriveCleanUp} -ArgumentList $Computer
-                }
-                Remove-PSSession -InstanceId $session.InstanceId
+                    Invoke-Command -Session $session -ScriptBlock ${function:Set-DriveCleanupOptions} #preps the sagerun switches with invoke-command
+                    Invoke-Command -Session $session -ScriptBlock ${function:WorkDriveCleanUp} -ArgumentList $Computer #runs the function for disk cleanup with invoke-command
             }
         }
-        else {            
-            $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem | select -ExpandProperty LastBootUpTime
+        else { #if running against localhost, output and function is essentially the same just shortened           
+            $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem | select -ExpandProperty LastBootUpTime | select Days,Hours,Minutes
             $disks = Get-CimInstance -ClassName Win32_LogicalDisk -Filter "DeviceID='C:'"
             [int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int]
-            $properties = @{Computername = "$computername"
-                            Status = "Connected"
-                            DriveAvail = "% $percentavail"
-                            Uptime = "$lastboot"
-            }
+            $properties = [Ordered]@{Computername = "$computername"
+                                     Status = "Connected"
+                                     DriveAvail = "% $percentavail"
+                                     Uptime = "$lastboot"
+                                     }
             $obj = New-Object -TypeName psobject -Property $properties
             Set-DriveCleanupOptions
             WorkDriveCleanUp -computername $computername
