@@ -28,12 +28,12 @@ PS>Call-RandomPassword -Count 10
                   '!','@','#','$','%','^','&','*','(',')'
     $pw = ($characters | Get-Random -count $Length) -join ''
     $pw
-    Set-Clipboard -Value $pw
+    $pw | clip
 }
 
-New-Alias irp Invoke-RandomPassword
+New-Alias rpw Invoke-RandomPassword
 Export-ModuleMember -Function Invoke-RandomPassword
-Export-ModuleMember -Alias irp
+Export-ModuleMember -Alias rpw
 <#
 ###########################################################################
 #>
@@ -94,7 +94,7 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
                    ValueFromPipelinebyPropertyName=$True
         )]
         [string]$SourceUser,
-        [Parameter(Mandatory=$False,
+        [Parameter(Mandatory=$True,
                    ValueFromPipeline=$True,
                    ValueFromPipelinebyPropertyName=$True
         )]
@@ -176,9 +176,9 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
         
     }
 }
-New-Alias iadu Invoke-NewADUser
-Export-ModuleMember -Function Invoke-NewADUser
-Export-ModuleMember -Alias iadu
+    New-Alias iadu Invoke-NewADUser
+    Export-ModuleMember -Function Invoke-NewADUser
+    Export-ModuleMember -Alias iadu
 <#
 ###########################################################################
 #>
@@ -195,7 +195,10 @@ function Set-DriveCleanupOptions {
                         ErrorAction = 'SilentlyContinue'
                         
         }
-        Get-ItemProperty @CurrentItemSet | Remove-ItemProperty -Name StateFlags0001 -ErrorAction SilentlyContinue #Pushes the StateFlag001 switch to be removed from every subpath in VolumeCaches if it exists
+        Get-ItemProperty @CurrentItemSet |`
+            Remove-ItemProperty `
+            -Name StateFlags0001 `
+            -ErrorAction SilentlyContinue #Pushes the StateFlag001 switch to be removed from every subpath in VolumeCaches if it exists
 
     }
     PROCESS {
@@ -261,11 +264,14 @@ function WorkDriveCleanUp {
         $computername
     )
     BEGIN {
-        $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem | select -ExpandProperty LastBootUpTime #grabs time since last boot
+        $lastboot = Get-CimInstance `
+                        -ClassName Win32_OperatingSystem |`
+                            Select-Object `
+                            -ExpandProperty LastBootUpTime #grabs time since last boot
         $currentdate = Get-Date
         $continue = $false
         $restart = $false
-        if (($currentdate - $lastboot | select -ExpandProperty 'Days') -eq '0') { #checks to see if Lastbootuptime is less than 1 day
+        if (($currentdate - $lastboot | Select-Object -ExpandProperty 'TotalHours') -lt '48') { #checks to see if Lastbootuptime is less than 48 hours
             $continue = $true
         }
         else {
@@ -284,16 +290,22 @@ function WorkDriveCleanUp {
                 Write-Verbose "Please restart computer: '$computername' when available, and run the script again."
                 }
         }
-        $disks = Get-CimInstance -ClassName Win32_LogicalDisk -ComputerName $computername -Filter "DeviceID='C:'" #get primary disk info
+        $disks = Get-CimInstance `
+                    -ClassName Win32_LogicalDisk `
+                    -Filter "DeviceID='C:'" #get primary disk info
    [int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int] #take disk info and form it into percentage
         if ($continue) {  #if lastboot is = 0 then run disk cleanup
             if ($percentavail -in 11..80) { #if the integer of percentleft fits into range, run clean
                 #Run Disk Cleanup
-                Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:1' -WindowStyle Hidden #/sagerun:1 runs the StateFlags001 switches
+                Start-Process `
+                    -FilePath CleanMgr.exe `
+                    -ArgumentList '/sagerun:1' `
+                    -WindowStyle Hidden #/sagerun:1 runs the StateFlags001 switches
                 Write-Verbose "Drive Percent Left is: '$percentavail', make necessary changes to Disk Clean Tool options."
             }
             elseif ($percentavail -in 0..10) { #if the integer of percentleft fits into this range as well, prompt for further discovery
-                $computername | Out-File Comp_Drive_Full.txt -Append
+                $computername |
+                    Out-File -FilePath .\Comp_Drive_Full.txt -Append
                 Write-Verbose "Check the Comp_Drive_Full text file."
             }
             
@@ -303,7 +315,7 @@ function WorkDriveCleanUp {
     }
 }
 
-function Call-DriveCleanUp {
+function Invoke-DriveCleanUp {
 <#
 .SYNOPSIS
 Automates minor disk cleanup.
@@ -315,15 +327,15 @@ This CMDlet collects information about "C" drive of a computer local or otherwis
 Specifies the computername variable. No default value but 'localhost' is accepted.
 
 .EXAMPLE
-PS> Call-DriveCleanup -computername 'localhost'
+PS> Invoke-DriveCleanUp -computername 'localhost'
 
 .EXAMPLE
-PS> Get-ADComputer -filter "name -like '*'" | Call-DriveCleanUp
+PS> Get-ADComputer -filter "name -like '*'" | Invoke-DriveCleanUp
 
 #>
     [CmdletBinding(SupportsShouldProcess=$True)]
     param(
-    [Parameter(Mandatory=$True,
+    [Parameter(Mandatory=$False,
                 ValueFromPipeline=$True,
                 ValueFromPipelineByPropertyName=$True
     )]
@@ -332,64 +344,99 @@ PS> Get-ADComputer -filter "name -like '*'" | Call-DriveCleanUp
     )
     BEGIN {
         $credential = Get-Credential -Message "If not Q'ing AD computers, ignore credential request." #get credential or ignore if localhost
-        del .\Comp_No_Connection.txt -ea SilentlyContinue
-        del .\Comp_Drive_Full.txt -ea SilentlyContinue
+        $date = Get-Date
+        Remove-Item .\Comp_No_Connection.txt -ea SilentlyContinue
+        Remove-Item .\Comp_Drive_Full.txt -ea SilentlyContinue
         
     }
     PROCESS {
-        $currentdate = Get-Date
         if ($computername -ne 'localhost') { #if querying several computers, try running sessions
             foreach ($computer in $computername) {
-                if ((Test-NetConnection -ComputerName $Computer -CommonTCPPort WinRM).TcpTestSucceeded) {#test TCP connection
-                    $session = New-PSSession -ComputerName $computer -Credential $credential -ea SilentlyContinue #new pssession
-                    $cimsession = New-CimSession -ComputerName $computer -Credential $credential -ea SilentlyContinue #new cimsession
-                    $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem -CimSession $cimsession | select -ExpandProperty LastBootUpTime | select Days,Hours,Minutes #grap last boot up time
-                    $disks = Get-CimInstance -ClassName Win32_LogicalDisk -CimSession $cimsession -Filter "DeviceID='C:'" #grab primary disk info
-                    [int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int] #convert disk available to percentage
-                    $properties = [Ordered]@{Computername = "$computer"
-                                             Status = "Connected"
-                                             DriveAvail = "% $percentavail"
-                                             Uptime = "$lastboot"
-                                             }
-                } #display computer info in an object
-                else {
+                try{$ping = Test-NetConnection `
+                                -ComputerName $Computer `
+                                -CommonTCPPort WinRM
+                }
+                catch {
                     $computer | Out-File Comp_No_Connection.txt -Append
                     $properties = [Ordered]@{Computername = "$computer"
-                                                   Status = "Disconnected"
+                                             Status       = "Disconnected"
                                              }
-                } #display alternate computer info for failed computers
+                
+                }
+                    
+                    if ($ping.TcpTestSucceeded) {#test TCP connection
+                        $session = New-PSSession `
+                                        -ComputerName $computer `
+                                        -Credential $credential `
+                                        -ea SilentlyContinue #new pssession
+                        $cimsession = New-CimSession `
+                                        -ComputerName $computer `
+                                        -Credential $credential `
+                                        -ea SilentlyContinue #new cimsession
+                        $lastboot = Get-CimInstance `
+                                        -ClassName Win32_OperatingSystem `
+                                        -CimSession $cimsession |
+                                            Select-Object `
+                                            -ExpandProperty LastBootUpTime #grap last boot up time
+                        $TotalHrs = ($date - $lastboot).TotalHours -as [int]
+                        $disks = Get-CimInstance `
+                                        -ClassName Win32_LogicalDisk `
+                                        -CimSession $cimsession `
+                                        -Filter "DeviceID='C:'" #grab primary disk info
+                        [int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int] #convert disk available to percentage
+                        $properties = [Ordered]@{Computername = "$computer"
+                                                Status       = "Connected"
+                                                DriveAvail   = "% $percentavail"
+                                                Uptime       = "$TotalHrs Hours"
+                                                }
+                    } #display computer info in an object
+                finally {
                     $obj = New-Object -TypeName psobject -Property $properties
                     Write-Output $obj
-                    Invoke-Command -Session $session -ScriptBlock ${function:Set-DriveCleanupOptions} #preps the sagerun switches with invoke-command
-                    Invoke-Command -Session $session -ScriptBlock ${function:WorkDriveCleanUp} -ArgumentList $Computer #runs the function for disk cleanup with invoke-command
+                } #display alternate computer info for failed computers
+                    
+                    Invoke-Command `
+                        -Session $session `
+                        -ScriptBlock ${function:Set-DriveCleanupOptions} #preps the sagerun switches with invoke-command
+                    Invoke-Command `
+                        -Session $session `
+                        -ScriptBlock ${function:WorkDriveCleanUp} `
+                            -ArgumentList $Computer #runs the function for disk cleanup with invoke-command
             }
         }
         else { #if running against localhost, output and function is essentially the same just shortened           
-            $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem | select -ExpandProperty LastBootUpTime | select Days,Hours,Minutes
-            $disks = Get-CimInstance -ClassName Win32_LogicalDisk -Filter "DeviceID='C:'"
+            $lastboot = Get-CimInstance `
+                            -ClassName Win32_OperatingSystem |
+                                Select-Object `
+                                -ExpandProperty LastBootUpTime
+            $TotalHrs = ($date - $lastboot).TotalHours -as [int]
+            $disks = Get-CimInstance `
+                            -ClassName Win32_LogicalDisk `
+                            -Filter "DeviceID='C:'"
             [int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int]
             $properties = [Ordered]@{Computername = "$computername"
-                                     Status = "Connected"
-                                     DriveAvail = "% $percentavail"
-                                     Uptime = "$lastboot"
+                                     Status       = "Connected"
+                                     DriveAvail   = "% $percentavail"
+                                     Uptime       = "$TotalHrs HoursN"
                                      }
-            $obj = New-Object -TypeName psobject -Property $properties
+            $obj = New-Object `
+                        -TypeName psobject `
+                        -Property $properties
             Set-DriveCleanupOptions
-            WorkDriveCleanUp -computername $computername
+            WorkDriveCleanUp `
+                        -computername $computername
             Write-Output $obj
         }
     }
     END {
-      
     }
-    
 }
 <#
 ###########################################################################
 #>
 
-New-Alias cleanup Call-DriveCleanUp
-Export-ModuleMember -Function Call-DriveCleanUp
+New-Alias cleanup Invoke-DriveCleanUp
+Export-ModuleMember -Function Invoke-DriveCleanUp
 Export-ModuleMember -Alias cleanup
 
 
