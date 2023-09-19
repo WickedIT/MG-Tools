@@ -17,11 +17,17 @@ Certifications and goals for each - by category.
         VCP-DCV
 
 4. API's
-    
+    proxmox
+    vmware
+    minecraft
+    azure
 
 5. Office 365
+    MD-102 -- Microsoft 365 Certified: Endpoint Administrator Associate
+    MS-102 -- Microsoft 365 Certified: Administrator Expert
 
 6. SQL
+
 
 7. Python
 
