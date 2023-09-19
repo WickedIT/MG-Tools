@@ -1,0 +1,28 @@
+This will be my official guide to my career path in regard to my homelab and its progression.
+
+Certifications and goals for each - by category.
+
+1. M$svr (AD,DNS,DHCP,FS,GP)
+    azure | az-900, az-800, az-801
+
+2. powershell
+    no certs but there are modules.
+        graph
+        azure
+        Vmware
+        hyper-v
+
+3. Vmware
+    cert path is too expensive
+        VCP-DCV
+
+4. API's
+    
+
+5. Office 365
+
+6. SQL
+
+7. Python
+
+8. Linux

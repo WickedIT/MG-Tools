@@ -70,7 +70,7 @@ function Set-DriveCleanupOptions {
 }
 
 
-function WorkDriveCleanUp {
+function Invoke-DriveCleanUpWorkerFunction {
     param(
         $VerbosePreference = 'Continue',
         [Parameter(Mandatory=$True,
@@ -87,7 +87,7 @@ function WorkDriveCleanUp {
         $currentdate = Get-Date
         $continue = $false
         $restart = $false
-        if (($currentdate - $lastboot | Select-Object -ExpandProperty 'TotalHours') -lt '48') { #checks to see if Lastbootuptime is less than 48 hours
+        if (($currentdate - $lastboot | Select-Object -ExpandProperty 'TotalHours') -lt '168') { #checks to see if Lastbootuptime is less than 48 hours
             $continue = $true
         }
         else {
@@ -156,7 +156,7 @@ PS> Get-ADComputer -filter "name -like '*'" | Invoke-DriveCleanUp
                 ValueFromPipelineByPropertyName=$True
     )]
     [Alias("Name")]
-    $computername
+    $computername='localhost'
     )
     BEGIN {
         $credential = Get-Credential -Message "If not Q'ing AD computers, ignore credential request." #get credential or ignore if localhost
@@ -175,7 +175,7 @@ PS> Get-ADComputer -filter "name -like '*'" | Invoke-DriveCleanUp
                 catch {
                     $computer | Out-File Comp_No_Connection.txt -Append
                     $properties = [Ordered]@{Computername = "$computer"
-                                             Status       = "Disconnected"
+                                             Status       = "Disconnected or Blocked"
                                              }
                 
                 }
@@ -205,18 +205,24 @@ PS> Get-ADComputer -filter "name -like '*'" | Invoke-DriveCleanUp
                                                 DriveAvail   = "% $percentavail"
                                                 Uptime       = "$TotalHrs Hours"
                                                 }
-                    } #display computer info in an object
-                finally {
+                    } 
+                    else {
+                        $properties = [Ordered]@{Computername = "$computer"
+                        Status       = "Ping Failed"
+                        DriveAvail   = "N/A"
+                        Uptime       = "N/A"
+                        }
+                    }#display computer info in an object
+
                     $obj = New-Object -TypeName psobject -Property $properties
-                    Write-Output $obj
-                } #display alternate computer info for failed computers
+                    Write-Output $obj #display alternate computer info for failed computers
                     
                     Invoke-Command `
                         -Session $session `
                         -ScriptBlock ${function:Set-DriveCleanupOptions} #preps the sagerun switches with invoke-command
                     Invoke-Command `
                         -Session $session `
-                        -ScriptBlock ${function:WorkDriveCleanUp} `
+                        -ScriptBlock ${function:Invoke-DriveCleanUpWorkerFunction} `
                             -ArgumentList $Computer #runs the function for disk cleanup with invoke-command
             }
         }
@@ -239,7 +245,7 @@ PS> Get-ADComputer -filter "name -like '*'" | Invoke-DriveCleanUp
                         -TypeName psobject `
                         -Property $properties
             Set-DriveCleanupOptions
-            WorkDriveCleanUp `
+            Invoke-DriveCleanUpWorkerFunction `
                         -computername $computername
             Write-Output $obj
         }
