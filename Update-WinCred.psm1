@@ -1,3 +1,5 @@
+#I dont think this will be useful henceforth but I think it will be good to keep as a template later.
+
 function Update-WinCred {
     param($VerbosePreference='Continue')
     
@@ -29,8 +31,8 @@ function Update-WinCred {
             $pcname = $Target.split('=')
             if ($ComputerList -notcontains $pcname[1]) {
                 $device = $pcname[1]
-                $device | Out-File RemoveCredentials.txt -Append
-                Write-Verbose "Credential for $device was not found in AD and needs to be removed from credentials."
+                $device | Out-File RemovedCredentials.txt -Append
+                Write-Verbose "Credential for $device was not found in AD and was to be removed from credentials."
             }
         }
         $PCCount = ($ComputerList | Measure-Object).Count

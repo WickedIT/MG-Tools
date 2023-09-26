@@ -27,8 +27,12 @@ Certifications and goals for each - by category.
     MS-102 -- Microsoft 365 Certified: Administrator Expert
 
 6. SQL
-
+    MySQL 5.7 DB admin
 
 7. Python
+    PCAP-31-XX
+    PCPP-32-1XX
+    PCPP-32-2XX
 
 8. Linux
+    CompTIA Linux+
