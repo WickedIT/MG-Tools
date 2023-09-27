@@ -1,4 +1,4 @@
-#I dont think this will be useful henceforth but I think it will be good to keep as a template later.
+#I dont think this will be useful henceforth but I think it will be good to keep as a template for later.
 
 function Update-WinCred {
     param($VerbosePreference='Continue')
