@@ -12,6 +12,9 @@ tools
     gp discovery, backup, and deploy
     file permission checker for elaborate file systems with plug and play txt files for expected permissions (potentially create it based on user submission on first run).
     start and manage sessions as services with retry atttempts, (hopefully) session injection, and error handling of any sort
+    create output of update status of windows machines on the network.
+    build out mass output for org that could be called upon for review (possibly displayed on web server).
+        includes updates, uptime, storage usage, service uptime, backup status
 
 api automation
     proxmox
