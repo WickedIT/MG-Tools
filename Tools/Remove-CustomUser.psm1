@@ -3,7 +3,10 @@ function remove-customlocaluser {
     param([Paramter(Mandatory=$False)][string]$Identity)
     BEGIN{
         $localUsers = Get-Localusers
-        Out-Host $localUsers
+        $n = 1
+        $listOfLocalUsers = foreach ($user in $localUsers) {
+            
+        }
         
 
 
