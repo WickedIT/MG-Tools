@@ -1,25 +1,23 @@
 #make script deployable with only a username needed and prompted with a list of current user accounts on the PC
 function remove-customlocaluser {
-    param([Paramter(Mandatory=$False)][string]$Identity)
-    BEGIN{
-        $localUsers = Get-Localusers
+        $localUsers = Get-Localuser
         $n = 1
-        $listOfLocalUsers = foreach ($user in $localUsers) {
-            
+        foreach ($user in $localUsers) {
+            $listOfLocalUsers += "|<< $n. $($user.name) >>|"
+            $n += 1
         }
-        
+        Write-Host "This is the list of local users!"
+        $listOfLocalUsers | Write-Output
+        [int]$numberAssignedToLocalUser = Read-Host "Please select one to be removed by its number!"
+        $actualUsertoRemove = 
 
-
-    }
-    PROCESS{ 
-        Get-CimInstance -Class Win32_UserProfile | Where-Object { $_.Localpath.split('\')[-1] -eq '###' } | Remove-CimInstance
-    }
-    END{
-
-    }
 } 
 New-Alias rclu Remove-CustomLocalUser
 Export-ModuleMember -function Remove-CustomLocalUser
 Export-ModuleMember -Alias rclu
 
+
+<#
+Get-CimInstance -Class Win32_UserProfile | Where-Object { $_.Localpath.split('\')[-1] -eq '###' } | Remove-CimInstance
+#>
 
