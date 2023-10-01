@@ -193,7 +193,7 @@ PS> Get-ADComputer -filter "name -like '*'" | Invoke-DriveCleanUp
                                         -ClassName Win32_OperatingSystem `
                                         -CimSession $cimsession |
                                             Select-Object `
-                                            -ExpandProperty LastBootUpTime #grap last boot up time
+                                            -ExpandProperty LastBootUpTime #grab last boot up time
                         $TotalHrs = ($date - $lastboot).TotalHours -as [int]
                         $disks = Get-CimInstance `
                                         -ClassName Win32_LogicalDisk `
