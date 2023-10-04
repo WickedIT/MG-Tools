@@ -24,4 +24,20 @@ azure tools
 RMM
     create different scope scenarios for querying devices through winrm
     create service alerts
-#>    
+#>  
+
+
+<#          LAB hardware
+    MINI_PC
+        8c 16gb
+            2c 6gb -- vm-dom         ## CRITICAL
+            2c 2gb -- vm-sql         ## CRITICAL
+            4c 8gb -- vm-tool_box    ## High
+
+    BOX_PC
+        8c 32gb
+            4c 16gb -- vm-MC         ## NON
+            2c  8gb -- vm-backup
+
+
+#>

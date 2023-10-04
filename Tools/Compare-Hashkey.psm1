@@ -1,3 +1,5 @@
+#need to find a way to detect filepath on next mouse click
+
 function Compare-Hashkey {
     $download_hash = Read-Host "Please enter the downloads expected sha256."
     $exe_path = Read-Host "Please provide the name of the file."
