@@ -9,7 +9,10 @@ function remove-customlocaluser {
         Write-Host "This is the list of local users!"
         $listOfLocalUsers | Write-Output
         [int]$numberAssignedToLocalUser = Read-Host "Please select one to be removed by its number!"
-        $actualUsertoRemove = 
+        $actualUserIndex = $numberAssignedToLocalUser - 1
+        $actualUsertoRemove = $localUsers[$actualUserIndex] | Remove-LocalUser
+        Write-Output $actualUsertoRemove
+
 
 } 
 New-Alias rclu Remove-CustomLocalUser

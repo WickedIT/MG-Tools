@@ -2,29 +2,25 @@ This will be my official guide to my career path in regard to my homelab and its
 
 Certifications and goals for each - by category.
 
-1. M$svr (AD,DNS,DHCP,FS,GP)
+1. Office 365
+    MD-102 -- Microsoft 365 Certified: Endpoint Administrator Associate
+    MS-102 -- Microsoft 365 Certified: Administrator Expert
+    
+2. M$svr (AD,DNS,DHCP,FS,GP)
     azure | az-900, az-800, az-801
 
-2. powershell
+3. powershell
     no certs but there are modules.
         graph
         azure
         Vmware
         hyper-v
 
-3. Vmware
-    cert path is too expensive
-        VCP-DCV
-
 4. API's
     proxmox
     vmware
     minecraft
     azure
-
-5. Office 365
-    MD-102 -- Microsoft 365 Certified: Endpoint Administrator Associate
-    MS-102 -- Microsoft 365 Certified: Administrator Expert
 
 6. SQL
     MySQL 5.7 DB admin
@@ -36,3 +32,7 @@ Certifications and goals for each - by category.
 
 8. Linux
     CompTIA Linux+
+    
+4. Vmware
+    cert path is too expensive
+        VCP-DCV

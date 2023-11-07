@@ -168,7 +168,8 @@ PS> Get-ADComputer -filter "name -like '*'" | Invoke-DriveCleanUp
     PROCESS {
         if ($computername -ne 'localhost') { #if querying several computers, try running sessions
             foreach ($computer in $computername) {
-                try{$ping = Test-NetConnection `
+                try{
+                    $ping = Test-NetConnection `
                                 -ComputerName $Computer `
                                 -CommonTCPPort WinRM
                 }

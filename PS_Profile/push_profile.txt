@@ -1,1 +1,2 @@
-#script to propagate profile
+#profile to be propagated
+

@@ -38,6 +38,7 @@ RMM
         8c 32gb
             4c 16gb -- vm-MC         ## NON
             2c  8gb -- vm-backup
+            2c  8gb -- 
 
 
 #>
