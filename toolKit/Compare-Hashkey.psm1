@@ -21,8 +21,12 @@ function Compare-Hashkey {
     #$find_exe_path = Get-ChildItem -Path "C:\Users\pcadmin\Downloads\" | where-object {$_.name -like "$exe_path"} | select-object -ExpandProperty PSChildName
     $exe_hash = Get-FileHash -Path "$exe_path" -Algorithm SHA256
     $result = Compare-Object -ReferenceObject "$download_hash" -DifferenceObject "$($exe_hash.Hash)"
+    if ($null -eq $result) {
+        Write-Output "The Hash code is correct!"
+    }
+    else {
     Write-Output $result
-
+    }
 }
 New-Alias chash Compare-Hashkey
 Export-ModuleMember -Function Compare-Hashkey

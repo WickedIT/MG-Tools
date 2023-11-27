@@ -1,0 +1,6 @@
+$rdpEnabled = 
+    0 -eq (Get-ItemPropertyValue 'HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server' fDenyTSConnections)
+
+$activeRDPSession =
+    quser.exe | Select-String -Quiet '\brdp-'
+

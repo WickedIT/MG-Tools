@@ -1,0 +1,4 @@
+function Invoke-GPGod {
+    <#
+    #> 
+    }
