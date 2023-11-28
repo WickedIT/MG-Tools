@@ -1,4 +1,4 @@
-function Get-PSUpdate {
+function Invoke-PSUpdate {
     <#
     #> 
 #common variables
@@ -29,4 +29,4 @@ $updateOutput = foreach ($svr in $availUpdates) {
 
 }
 }
-Export-ModuleMember -Function Invoke-PSUPd
+Export-ModuleMember -Function Invoke-SvrUpdate
