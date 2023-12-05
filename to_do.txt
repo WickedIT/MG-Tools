@@ -1,0 +1,9 @@
+finish setting up WSUS
+
+install qemu on remaining servers
+
+look into GPO for pushing admin connect more and find out why it is not properly applying to the storage admin role
+
+work on scripts once updates are figured out.
+
+work on 'on-prem' rmm
