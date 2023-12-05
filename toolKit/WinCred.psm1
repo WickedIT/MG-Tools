@@ -40,6 +40,6 @@ function Update-WinCred {
 
     }
 }
-Update-WinCred
+#Update-WinCred
 notepad.exe .\RemoveCredentials.txt
 
