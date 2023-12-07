@@ -25,13 +25,13 @@ Get-CimInstance -Class Win32_UserProfile | Where-Object { $_.Localpath.split('\'
 #>
 
 
-<#function Remove-WinUser {
-    #
+function Remove-WinUser {
+    <#
     .SYNOPSIS
         Displays list of all user profiles and prompt for which profile to remove.
     .DESCRIPTION
         Pull's full list of User Profiles on the computer in a list, then waits for user to input which user they want to remove from the computer. Then confirms the selection.
-    #
+    #>
         [CMDletBinding(SupportsShouldProcess)]
         param($VerbosePerference = "Continue")
         BEGIN{
@@ -57,8 +57,7 @@ Get-CimInstance -Class Win32_UserProfile | Where-Object { $_.Localpath.split('\'
             }
         }
     }
-    Remove-WinUser
-    #>
+    Export-ModuleMember -function Remove-WinUser
     
     
     

@@ -29,4 +29,4 @@ $updateOutput = foreach ($svr in $availUpdates) {
 
 }
 }
-Export-ModuleMember -Function Get-psUpdate
+#Export-ModuleMember -Function Get-psUpdate

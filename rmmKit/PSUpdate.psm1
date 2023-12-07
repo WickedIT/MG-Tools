@@ -29,4 +29,4 @@ $updateOutput = foreach ($svr in $availUpdates) {
 
 }
 }
-Export-ModuleMember -Function Invoke-SvrUpdate
+#Export-ModuleMember -Function Invoke-SvrUpdate
