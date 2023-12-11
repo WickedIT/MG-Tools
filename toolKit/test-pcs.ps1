@@ -32,4 +32,4 @@
     END {
     }       
 }
-Test-PCs
+#Test-PCs

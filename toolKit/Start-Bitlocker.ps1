@@ -54,7 +54,7 @@ function Start-Bitlocker {
 
     }
 }
-Start-Bitlocker
+#Start-Bitlocker
 
 <#
 .SIGNATURE

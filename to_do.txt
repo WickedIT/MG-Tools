@@ -1,9 +1,11 @@
-finish setting up WSUS
+successfully setup WSUS and pushed the configuration to computers. need to wait and see if the policies need to be changed.
 
 install qemu on remaining servers
 
 look into GPO for pushing admin connect more and find out why it is not properly applying to the storage admin role
+    admin connect is working on the servers however I am not sure why it is not pushing to the laptop, not a big deal just annoying
 
 work on scripts once updates are figured out.
+    Updates are figured out for the most part; need to go through modules for wsus, gp, and WB to develop scripts
 
 work on 'on-prem' rmm

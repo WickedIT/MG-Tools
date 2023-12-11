@@ -44,4 +44,4 @@ function Start-Profile {
     
     END {Set-Location "$progressscripts"}
 }
-Start-Profile
+#Start-Profile

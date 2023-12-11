@@ -16,7 +16,7 @@
     END{
     }
 }
-Disable-USBPowerManagment
+#Disable-USBPowerManagment
 <#
 .SIGNATURE
 Michael Gagnon (IT Support Technician)
