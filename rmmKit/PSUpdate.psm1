@@ -35,8 +35,7 @@ function Invoke-WUStatus {
     $computer = Read-Host "What is the hostname of WSUS?: "
     $session = New-PSSession -ComputerName $computer
     try{
-        $command = Invoke-Command -Session $session -scriptblock {(Get-wsusserver).GetSubscription().GetLastSynchronizationInfo()} -ErrorAction Stop
-        Write-Host $command
+        Invoke-Command -Session $session -scriptblock {(Get-wsusserver).GetSubscription().GetLastSynchronizationInfo()} -ErrorAction Stop
     }
     catch {
         Write-Output "Sometihng went wrong, this is the device entered: "$($computer)". Please try again with another computer or debug."
