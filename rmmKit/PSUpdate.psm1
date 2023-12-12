@@ -30,3 +30,17 @@ $updateOutput = foreach ($svr in $availUpdates) {
 }
 }
 #Export-ModuleMember -Function Invoke-SvrUpdate
+
+function Invoke-WUStatus {
+    $computer = Read-Host "What is the hostname of WSUS?: "
+    $session = New-PSSession -ComputerName $computer
+    try{
+        $command = Invoke-Command -Session $session -scriptblock {(Get-wsusserver).GetSubscription().GetLastSynchronizationInfo()} -ErrorAction Stop
+        Write-Host $command
+    }
+    catch {
+        Write-Output "Sometihng went wrong, this is the device entered: "$($computer)". Please try again with another computer or debug."
+    }
+    
+}
+Export-ModuleMember -Function Invoke-WUStatus
