@@ -9,3 +9,6 @@ work on scripts once updates are figured out.
     Updates are figured out for the most part; need to go through modules for wsus, gp, and WB to develop scripts
 
 work on 'on-prem' rmm
+
+get sccm running correctly and establish a workflow for management
+
