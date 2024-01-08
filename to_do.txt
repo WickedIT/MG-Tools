@@ -1,4 +1,5 @@
 successfully setup WSUS and pushed the configuration to computers. need to wait and see if the policies need to be changed.
+    changed pol
 
 install qemu on remaining servers
 
@@ -12,3 +13,30 @@ work on 'on-prem' rmm
 
 get sccm running correctly and establish a workflow for management
 
+
+
+Updating
+    Pcs should be updated daily
+        not important for major backup schedule
+    servers should be updated weekly
+        windows server backup and snapshot performed before updates are installed.
+    DC's should be updated monthly
+        same as servers but once a month
+
+Monitoring
+    CPU
+    RAM
+    Disk usage
+    Network usage
+    update statuses
+    backup statuses
+    DHCP/DNS/AD calls to each DC
+
+
+Reporting
+
+
+Security
+
+
+Backups
