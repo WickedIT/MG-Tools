@@ -1,0 +1,78 @@
+version: '3.9'
+services:
+    portainer-ce:
+        image: 'portainer/portainer-ce:latest'
+        volumes:
+            - 'cupboard_data:/data'
+            - '/var/run/docker.sock:/var/run/docker.sock'
+        restart: always
+        container_name: portainer
+        ports:
+            - '9443:9443'
+            - '8000:8000'
+
+    home-assistant:
+        image: homeassistant/home-assistant
+        ports:
+            - '8123:8123'
+        restart: always
+        volumes:
+            - '~/homeassistant/config:/config'
+        container_name: homeassistant
+
+    qbittorrent:
+        image: 'lscr.io/linuxserver/qbittorrent:latest'
+        restart: always
+        volumes:
+            - '/home/luser/downloads:/downloads'
+            - '/home/luser/qbittorrent/config:/config'
+        ports:
+            - '6881:6881/udp'
+            - '6881:6881'
+            - '8080:8080'
+        environment:
+            - WEBUI_PORT=8080
+            - TZ=Etc/UTC
+            - PGID=1000
+            - PUID=1000
+        container_name: qbittorrent
+
+    heimdall:
+        image: linuxserver/heimdall
+        restart: always
+        volumes:
+            - '~/hemidall/config:/config'
+        ports:
+            - '4443:4443'
+            - '7888:7888'
+        environment:
+            - TZ=America/Los_Angeles
+            - PGID=1000
+            - PUID=1000
+        container_name: heimdall
+
+    plex:
+        image: linuxserver/plex
+        volumes:
+            - '/media/NFS:/data'
+            - '~/plex/transcode:/transcode'
+            - '~/plex/database:/config'
+        environment:
+            - TZ=America/Los_Angeles
+        ports:
+            - '32400:32400'
+        container_name: plex
+
+    it-tools:
+        image: 'corentinth/it-tools:latest'
+        ports:
+            - '8081:80'
+        restart: always
+        container_name: it-tools
+    watchtower:
+        image: v2tec/watchtower
+        volumes:
+            - '/var/run/docker.sock:/var/run/docker.sock'
+        container_name: watchtower
+    volumes:
+        cupboard_data:
