@@ -53,6 +53,7 @@ services:
 
     plex:
         image: linuxserver/plex
+        restart: always
         volumes:
             - '/media/NFS:/data'
             - '~/plex/transcode:/transcode'
@@ -73,16 +74,18 @@ services:
 
     watchtower:
         image: 'v2tec/watchtower'
+        restart: always
         volumes:
             - '/var/run/docker.sock:/var/run/docker.sock'
         container_name: watchtower
     wordpress:
         image: 'wordpress'
-        links:
-          - wordpress_mariadb:mysql
+        restart: always
         environment:
-          - WORDPRESS_DB_PASSWORD='4gawrHF8'
+          - WORDPRESS_DB_HOST=mariadb
           - WORDPRESS_DB_USER='root'
+          - WORDPRESS_DB_PASSWORD='85awrHF8rthsrthsths'
+          - WORDPRESS_DB_NAME='wordpress'
         ports:
           - 10100:80
         volumes:
@@ -90,11 +93,12 @@ services:
         container_name: 'wordpress'
     mariadb:
         image: 'mariadb'
+        restart: always
         environment:
-          - MYSQL_ROOT_PASSWORD='4gawrHF8'
-          - MYDQL_DATABASE='wordpress'
+          - MYSQL_ROOT_PASSWORD='85awrHF8rthsrthsths'
+          - MYSQL_DATABASE='wordpress'
         volumes:
-          - '/home/luser/wordpress/db:/var/lib/mysql'
+          - '/home/luser/wordpress/db:/var/lib/mysqlx'
         container_name: wordpress_mariadb
 volumes:
   cupboard_data:
