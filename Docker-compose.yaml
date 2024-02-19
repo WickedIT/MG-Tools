@@ -1,4 +1,4 @@
-version: '3.9'
+version: '2.25.5'
 services:
     portainer-ce:
         image: 'portainer/portainer-ce:latest'
@@ -38,13 +38,13 @@ services:
         container_name: qbittorrent
 
     heimdall:
-        image: linuxserver/heimdall
+        image: 'lscr.io/linuxserver/heimdall:latest'
         restart: always
         volumes:
-            - '~/hemidall/config:/config'
+            - '/home/luser/heimdall/config:/config'
         ports:
-            - '4443:4443'
-            - '7888:7888'
+            - '4443:443'
+            - '7888:80'
         environment:
             - TZ=America/Los_Angeles
             - PGID=1000
@@ -59,6 +59,7 @@ services:
             - '~/plex/database:/config'
         environment:
             - TZ=America/Los_Angeles
+            - PLEX_CLAIM=claim-jLVoNaLHZashPJKJR7yZ
         ports:
             - '32400:32400'
         container_name: plex
@@ -68,11 +69,32 @@ services:
         ports:
             - '8081:80'
         restart: always
-        container_name: it-tools
+        container_name: 'it-tools'
+
     watchtower:
-        image: v2tec/watchtower
+        image: 'v2tec/watchtower'
         volumes:
             - '/var/run/docker.sock:/var/run/docker.sock'
         container_name: watchtower
-    volumes:
-        cupboard_data:
+    wordpress:
+        image: 'wordpress'
+        links:
+          - wordpress_mariadb:mysql
+        environment:
+          - WORDPRESS_DB_PASSWORD='4gawrHF8'
+          - WORDPRESS_DB_USER='root'
+        ports:
+          - 10100:80
+        volumes:
+          - '/home/luser/wordpress/html:/var/www/html'
+        container_name: 'wordpress'
+    mariadb:
+        image: 'mariadb'
+        environment:
+          - MYSQL_ROOT_PASSWORD='4gawrHF8'
+          - MYDQL_DATABASE='wordpress'
+        volumes:
+          - '/home/luser/wordpress/db:/var/lib/mysql'
+        container_name: wordpress_mariadb
+volumes:
+  cupboard_data:
