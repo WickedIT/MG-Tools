@@ -71,6 +71,23 @@ services:
             - '8081:80'
         restart: always
         container_name: 'it-tools'
+        
+    adguardhome:
+        image: adguard/adguardhome
+        container_name: adguardhome
+        volumes:
+          - ./conf:/opt/adguardhome/conf
+          - ./work:/opt/adguardhome/work
+        ports:
+            - 53:53 #dns
+            - 3000:3000 #webui
+        restart: unless-stopped
+        labels:
+          - "traefik.enable=true"
+          - "traefik.http.routers.adguardhome.entrypoints=insecure"
+          - "traefik.http.routers.adguardhome.rule=Host(`adguard.$DOMAIN`)"
+          - "traefik.http.services.adguardhome.loadbalancer.server.port=3000"
+          # - "traefik.http.routers.adguardhome.tls.certresolver=le"
 
     watchtower:
         image: 'v2tec/watchtower'
