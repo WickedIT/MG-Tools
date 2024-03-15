@@ -1,4 +1,4 @@
-version: '2.25.5'
+  version: '2.25.5'
 services:
     portainer-ce:
         image: 'portainer/portainer-ce:latest'
@@ -71,16 +71,20 @@ services:
             - '8081:80'
         restart: always
         container_name: 'it-tools'
-        
+
     adguardhome:
         image: adguard/adguardhome
         container_name: adguardhome
         volumes:
-          - ./conf:/opt/adguardhome/conf
-          - ./work:/opt/adguardhome/work
+            - /home/luser/adguard/conf:/opt/adguardhome/conf
+            - /home/luser/adguard/work:/opt/adguardhome/work
         ports:
-            - 53:53 #dns
-            - 3000:3000 #webui
+            - '53:53/tcp'
+            - '53:53/udp'
+            - '800:80/tcp'
+            - '4430:443/tcp'
+            - '4430:443/udp'
+            - '3000:3000/tcp'
         restart: unless-stopped
         labels:
           - "traefik.enable=true"
@@ -88,6 +92,28 @@ services:
           - "traefik.http.routers.adguardhome.rule=Host(`adguard.$DOMAIN`)"
           - "traefik.http.services.adguardhome.loadbalancer.server.port=3000"
           # - "traefik.http.routers.adguardhome.tls.certresolver=le"
+    chess-club:
+        image: chesscorp/chess-club
+        environment:
+            - dbddl=update
+        ports:
+            - '80:80'
+        volumes:
+            - '/home/luser/chess/db:/data'
+    calibre:
+        image: lscr.io/linuxserver/calibre:latest
+        container_name: calibre
+        environment:
+            - PUID=1000
+            - PGID=1000
+            - TZ=Etc/UTC
+        volumes:
+            - /media/NFS/Books/:/config
+        ports:
+            - 8090:8080
+            - 8191:8181
+            - 8091:8081
+        restart: unless-stopped
 
     watchtower:
         image: 'v2tec/watchtower'
