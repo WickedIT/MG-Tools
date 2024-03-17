@@ -97,7 +97,7 @@ services:
         environment:
             - dbddl=update
         ports:
-            - '80:80'
+            - '10101:80'
         volumes:
             - '/home/luser/chess/db:/data'
     calibre:
