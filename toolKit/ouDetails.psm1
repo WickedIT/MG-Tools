@@ -2,7 +2,7 @@ function Get-OUDetails {
     [CmdletBinding(SupportsShouldProcess)]
     param($VerbosePreference = "Continue")
     BEGIN {
-        $computers = 
+        $computers = $comp_list 
     }
     PROCESS {    
         foreach ($comp in $computers) {
