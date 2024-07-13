@@ -1,5 +1,7 @@
-function Get-PSUpdate {
+function Invoke-PSUpdate {
     <#
+    Add param block for some variables like dumpdir and the list of computers
+    Add more logic, error handling, and features (like making automatable.)
     #> 
 #common variables
 $dumpDir = "C:\admin\Development\Updates"
@@ -29,4 +31,4 @@ $updateOutput = foreach ($svr in $availUpdates) {
 
 }
 }
-#Export-ModuleMember -Function Get-psUpdate
+#Export-ModuleMember -Function Invoke-psUpdate
