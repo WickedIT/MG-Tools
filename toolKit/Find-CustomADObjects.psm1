@@ -1,6 +1,9 @@
 function Find-ADuser {
     param([Parameter(Mandatory=$True,Position=0)]$Identity)
     $UserProps = 'City','Title','Manager','MemberOf','telephonenumber','Department'
+    if ($Identity -eq '*') {
+        Get-AdUser -Filter $Identity 
+    }
     Get-ADUser -Identity $Identity -Properties $UserProps
 }
 New-Alias fadu Find-ADUser

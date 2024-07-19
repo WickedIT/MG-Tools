@@ -4,7 +4,7 @@ $module = 'AudioDeviceCmdlets'
         Install-Module -name $module -Force -Verbose
     }
     if (!(Get-Module -name $module)) {
-        Import-Module -name $module -Force -Verbose
+        Import-Module -name $module -Force
     }
     
     $AudioDevOne        = "{0.0.0.00000000}.{46ab9fd8-3c7a-4624-bf81-d42042e71ee6}"
