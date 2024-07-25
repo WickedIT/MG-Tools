@@ -1,7 +1,7 @@
 function Invoke-AudioDevSwap {
     $module = 'AudioDeviceCmdlets'
     if (!(Get-Module -Name $module -ListAvailable)) {#Checks that module is installed, requests permission and installs if not.
-        $continue = Read-Host "The module 'AudioDeviceCmdlet' is required but not installed, would you like to install it? (y/n)"
+        $continue = Read-Host "The module '$($module)' is required but not installed, would you like to install it? (y/n)"
         if ($continue.ToLower -eq 'y') {
             try {
                 Install-Module -name $module -Force -Verbose -ErrorAction Stop
