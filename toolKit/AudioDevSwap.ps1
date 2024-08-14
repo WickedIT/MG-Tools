@@ -1,7 +1,7 @@
 function Invoke-AudioDevSwap {
     $module = 'AudioDeviceCmdlets'
     if (!(Get-Module -Name $module -ListAvailable)) {#Checks that module is installed, requests permission and installs if not.
-        $continue = Read-Host "The module '$($module)' is required but not installed, would you like to install it? (y/n)"
+        $continue = Read-Host "The module 'AudioDeviceCmdlet' is required but not installed, would you like to install it? (y/n)"
         if ($continue.ToLower -eq 'y') {
             try {
                 Install-Module -name $module -Force -Verbose -ErrorAction Stop
@@ -58,30 +58,22 @@ function Invoke-AudioDevSwap {
         }
         $audiodev = Get-Content -Path $swapDevices | Select-Object -First 2
         $currentPlayback = Get-AudioDevice -Playback
-        if ($currentPlayback.ID -eq $audioDev[0]) {#Check if playback device is set to Dev#1 | switches to Dev#2
-            try{
-                $newPlayback= Set-AudioDevice -ID $audioDev[1] -ErrorAction Stop
+        try{
+            if ($currentPlayback.ID -eq $audioDev[0]) {#Check if playback device is set to Dev#1 | switches to Dev#2    $newPlayback= Set-AudioDevice -ID $audioDev[1] -ErrorAction Stop
+                $newPlayback = Set-AudioDevice -ID $audioDev[1] -ErrorAction Stop
                 $wshell= New-Object -ComObject Wscript.Shell
-                $wshell.Popup("Playback Device set to: $($newPlayback.Name)")
-                
+                $wshell.Popup("Playback Device set to: $($newPlayback.Name)")   
             }
-            catch {
-                Write-Error "Device not set. Current playback is still '$($currentPlayback.name)'"
-                return
-            }
-        }
-        else{#If playback was Dev#2 | switches to Dev#1
-            try{
+            else{
                 $newPlayback = Set-AudioDevice -ID $audioDev[0] -ErrorAction Stop
                 $wshell = New-Object -ComObject Wscript.Shell
                 $wshell.Popup("Playback Device set to: $($newPlayback.Name)")
-                
             }
-            catch {
-                Write-Error "Device not set. Current playback is still '$($currentPlayback.name)'"
-                return
-            }
+        }
+        catch {
+            Write-Error "Device not set. Current playback is still '$($currentPlayback.name)'"
+            return
         }
     }
 }
-Invoke-AudioDevSwap
+#Invoke-AudioDevSwap

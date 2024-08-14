@@ -16,16 +16,15 @@ function Invoke-FindFilePath {
 
 }
 function Compare-Hashkey {
-    $download_hash = Read-Host "Please enter the downloads expected sha256."
-    $exe_path = Invoke-FindFilePath #Read-Host "Please provide the name of the file."
-    #$find_exe_path = Get-ChildItem -Path "C:\Users\pcadmin\Downloads\" | where-object {$_.name -like "$exe_path"} | select-object -ExpandProperty PSChildName
-    $exe_hash = Get-FileHash -Path "$exe_path" -Algorithm SHA256
-    $result = Compare-Object -ReferenceObject "$download_hash" -DifferenceObject "$($exe_hash.Hash)"
-    if ($null -eq $result) {
-        Write-Output "The Hash code is correct!"
+    $download_hash = Read-Host "Please enter the downloads expected sha256."#Queries for the expected hashkey in terminal
+    $exe_path = Invoke-FindFilePath #Invokes the dialog box.
+    $exe_hash = Get-FileHash -Path "$exe_path" -Algorithm SHA256 #Generates the hashkey for the selected file.
+    $result = Compare-Object -ReferenceObject "$download_hash" -DifferenceObject "$($exe_hash.Hash)" #Compares the two hashes.
+    if ($null -eq $result) {#Displays whether hash is correct or not, if not it displays the files hash.
+        Write-Host "The Hash code is correct!"
     }
     else {
-    Write-Output $result
+    Write-Host $result
     }
 }
 New-Alias chash Compare-Hashkey

@@ -4,130 +4,78 @@ Run DiskCleanup on remote machines or localhost
 #>
 
 function Set-DriveCleanupOptions {
-    BEGIN {
-        $CurrentItemSet = @{
-                        Path        = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\*'
-                        Name        = 'StateFlags0001'
-                        ErrorAction = 'SilentlyContinue'
-                        
-        }
-        Get-ItemProperty @CurrentItemSet |`
-            Remove-ItemProperty `
-            -Name StateFlags0001 `
+    $CurrentItemSet = @{
+        Path        = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\*'
+        Name        = 'StateFlags0001'
+        ErrorAction = 'SilentlyContinue'              
+    }
+    Get-ItemProperty @CurrentItemSet `
+        | Remove-ItemProperty `
             -ErrorAction SilentlyContinue #Pushes the StateFlag001 switch to be removed from every subpath in VolumeCaches if it exists
-
-    }
-    PROCESS {
-        $Switches = @(
-            'Active Setup Temp Folders',
-            'BranchCache',
-            'Content Indexer Cleaner',
-            'Device Driver Packages',
-            'Downloaded Program Files',
-            'GameNewsFiles',
-            'GameStatisticsFiles',
-            'GameUpdateFiles',
-            'Internet Cache Files',
-            'Memory Dump Files',
-            'Offline Pages Files',
-            'Old ChkDsk Files',
-            'Previous Installations',
-            'Recycle Bin',
-            'Service Pack Cleanup',
-            'Setup Log Files',
-            'System error memory dump files',
-            'System error minidump files',
-            'Temporary Files',
-            'Temporary Setup Files',
-            'Temporary Sync Files',
-            'Thumbnail Cache',
-            'Update Cleanup',
-            'Upgrade Discarded Files',
-            'User file versions',
-            'Windows Defender',
-            'Windows Error Reporting Archive Files',
-            'Windows Error Reporting Queue Files',
-            'Windows Error Reporting System Archive Files',
-            'Windows Error Reporting System Queue Files',
-            'Windows ESD installation files',
-            'Windows Upgrade Log Files'
-            #Puts all DiskClean switches into a variable
-        )
-        foreach ($Switch in $Switches) {
-            $newItemSet = @{
-                        Path         = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\$switch"
-                        Name         = 'StateFlags0001'
-                        Value        = 1
-                        PropertyType = 'DWord'
-                        ErrorAction  = 'SilentlyContinue'
-                        #Sets the new details for the StateFlags001 switch
-            }
-            New-ItemProperty @newItemSet | Out-Null # applies newitemset to each folder in volumecaches
+    $Switches = @(
+        'Active Setup Temp Folders',
+        'BranchCache',
+        'Content Indexer Cleaner',
+        'Device Driver Packages',
+        'Downloaded Program Files',
+        'GameNewsFiles',
+        'GameStatisticsFiles',
+        'GameUpdateFiles',
+        'Internet Cache Files',
+        'Memory Dump Files',
+        'Offline Pages Files',
+        'Old ChkDsk Files',
+        'Previous Installations',
+        'Recycle Bin',
+        'Service Pack Cleanup',
+        'Setup Log Files',
+        'System error memory dump files',
+        'System error minidump files',
+        'Temporary Files',
+        'Temporary Setup Files',
+        'Temporary Sync Files',
+        'Thumbnail Cache',
+        'Update Cleanup',
+        'Upgrade Discarded Files',
+        'User file versions',
+        'Windows Defender',
+        'Windows Error Reporting Archive Files',
+        'Windows Error Reporting Queue Files',
+        'Windows Error Reporting System Archive Files',
+        'Windows Error Reporting System Queue Files',
+        'Windows ESD installation files',
+        'Windows Upgrade Log Files'
+        #Puts all DiskClean switches into a variable
+    )
+    foreach ($Switch in $Switches) {
+        $newItemSet = @{
+            Path         = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\$switch"
+            Name         = 'StateFlags0001'
+            Value        = 1
+            PropertyType = 'DWord'
+            ErrorAction  = 'SilentlyContinue'
+            #Sets the new details for the StateFlags001 switch
         }
-    }
-    END {
+        New-ItemProperty @newItemSet | Out-Null # applies newitemset to each folder in volumecaches
     }
 }
 
 
 function Invoke-DriveCleanUpWorkerFunction {
-    param(
-        $VerbosePreference = 'Continue',
-        [Parameter(Mandatory=$True,
-                   ValueFromPipeline=$True,
-                   ValueFromPipelinebyPropertyName=$True
-        )]
-        $computername
-    )
-    BEGIN {
-        $lastboot = Get-CimInstance `
-                        -ClassName Win32_OperatingSystem |`
-                            Select-Object `
-                            -ExpandProperty LastBootUpTime #grabs time since last boot
-        $currentdate = Get-Date
-        $continue = $false
-        $restart = $false
-        if (($currentdate - $lastboot | Select-Object -ExpandProperty 'TotalHours') -lt '168') { #checks to see if Lastbootuptime is less than 48 hours
-            $continue = $true
+    $disks = Get-CimInstance -ClassName Win32_LogicalDisk -Filter "DeviceID='C:'" #get primary disk info
+[int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int] #take disk info and form it into percentage
+    if ($continue) {  #if lastboot is = 0 then run disk cleanup
+        if ($percentavail -in 11..80) { #if the integer of percentleft fits into range, run clean
+            #Run Disk Cleanup
+            Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:1' -WindowStyle Hidden #/sagerun:1 runs the StateFlags001 switches
+            #
+            Write-Verbose "Drive Percent Left is: '$percentavail', make necessary changes to Disk Clean Tool options."
         }
-        else {
-            $restart = $true
+        elseif ($percentavail -in 0..10) { #if the integer of percentleft fits into this range as well, prompt for further discovery
+            $computername | Out-File -FilePath .\Comp_Drive_Full.txt -Append
+            Write-Verbose "Check the Comp_Drive_Full text file."
         }
-
-    }
-    PROCESS {
-        if ($restart) { #if lastboot is greater than 0 days, prompt for restart
-                Write-Verbose "This computer: '$computername' needs to be restarted before continuing."
-                $yesorno = Read-Host "Do you want to restart? For yes (y) for no (n)"
-                if ($yesorno -eq 'y') {
-                    Shutdown.exe /r /f
-                }
-                else {
-                Write-Verbose "Please restart computer: '$computername' when available, and run the script again."
-                }
-        }
-        $disks = Get-CimInstance `
-                    -ClassName Win32_LogicalDisk `
-                    -Filter "DeviceID='C:'" #get primary disk info
-   [int]$percentavail = ($disks.Freespace / $disks.Size) * 100 -as [int] #take disk info and form it into percentage
-        if ($continue) {  #if lastboot is = 0 then run disk cleanup
-            if ($percentavail -in 11..80) { #if the integer of percentleft fits into range, run clean
-                #Run Disk Cleanup
-                Start-Process `
-                    -FilePath CleanMgr.exe `
-                    -ArgumentList '/sagerun:1' `
-                    -WindowStyle Hidden #/sagerun:1 runs the StateFlags001 switches
-                Write-Verbose "Drive Percent Left is: '$percentavail', make necessary changes to Disk Clean Tool options."
-            }
-            elseif ($percentavail -in 0..10) { #if the integer of percentleft fits into this range as well, prompt for further discovery
-                $computername |
-                    Out-File -FilePath .\Comp_Drive_Full.txt -Append
-                Write-Verbose "Check the Comp_Drive_Full text file."
-            }
-            
-        }
-    }
-    END {
+        
     }
 }
 
@@ -169,32 +117,28 @@ PS> Get-ADComputer -filter "name -like '*'" | Invoke-DriveCleanUp
         if ($computername -ne 'localhost') { #if querying several computers, try running sessions
             foreach ($computer in $computername) {
                 try{
-                    $ping = Test-NetConnection `
-                                -ComputerName $Computer `
-                                -CommonTCPPort WinRM
+                    $ping = Test-NetConnection -ComputerName $Computer -CommonTCPPort WinRM
                 }
                 catch {
-                    $computer | Out-File Comp_No_Connection.txt -Append
                     $properties = [Ordered]@{Computername = "$computer"
                                              Status       = "Disconnected or Blocked"
                                              }
-                
+                    $properties | Out-File Comp_No_Connection.txt -Append
                 }
                     
                     if ($ping.TcpTestSucceeded) {#test TCP connection
-                        $session = New-PSSession `
-                                        -ComputerName $computer `
-                                        -Credential $credential `
-                                        -ea SilentlyContinue #new pssession
-                        $cimsession = New-CimSession `
-                                        -ComputerName $computer `
-                                        -Credential $credential `
-                                        -ea SilentlyContinue #new cimsession
-                        $lastboot = Get-CimInstance `
-                                        -ClassName Win32_OperatingSystem `
-                                        -CimSession $cimsession |
-                                            Select-Object `
-                                            -ExpandProperty LastBootUpTime #grab last boot up time
+                        try {
+                        $session = New-PSSession -ComputerName $computer -Credential $credential -ErrorAction Stop #new pssession
+                        Write-Verbose "New PSsession opened for $computer and is $($session.Available)"
+                        $cimsession = New-CimSession -ComputerName $computer -Credential $credential -ErrorAction Stop #new cimsession
+                        Write-Verbose "New Cimsession opened for $computer."
+                        }
+                        catch {
+                            Write-Verbose "Not able to connect to $computer with WSMAN and/or WINRM"
+                            exit
+                        }
+                        $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem -CimSession $cimsession `
+                                        | Select-Object -ExpandProperty LastBootUpTime #grab last boot up time
                         $TotalHrs = ($date - $lastboot).TotalHours -as [int]
                         $disks = Get-CimInstance `
                                         -ClassName Win32_LogicalDisk `
@@ -261,3 +205,28 @@ PS> Get-ADComputer -filter "name -like '*'" | Invoke-DriveCleanUp
 New-Alias cleanup Invoke-DriveCleanUp
 Export-ModuleMember -Function Invoke-DriveCleanUp
 Export-ModuleMember -Alias cleanup
+
+function Get-NeedsRestart {
+    $lastboot = Get-CimInstance -ClassName Win32_OperatingSystem `
+                        | Select-Object -ExpandProperty LastBootUpTime #grabs time since last boot
+    $currentdate = Get-Date
+    $continue = $false
+    $restart = $false
+    $sinceReboot = $currentdate - $lastboot | Select-Object -ExpandProperty 'TotalHours'
+    if ($sinceReboot -lt '168') { #checks to see if Lastbootuptime is less than 168 hours
+        $continue = $true
+    }
+    else {
+        $restart = $true
+    }
+    if ($restart) { #if lastboot is greater than 0 days, prompt for restart
+        Write-Host "This computer: '$computername' needs to be restarted before continuing."
+        $YorN = Read-Host "Do you want to restart?(Y/n)"
+        if ($YorN.ToUpper() -eq 'Y') {
+            Shutdown.exe /r /f
+        }
+        else {
+        Write-Verbose "Please restart computer: '$computername' when available, and run the script again."
+        }
+    }
+}
