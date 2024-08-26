@@ -1,4 +1,4 @@
-function Invoke-NewADUser {
+function New-CADUser {
 <#
 .SYNOPSIS
 Calls an advanced function to streamline New-ADUser creation by individual user or multiple users.
@@ -34,24 +34,28 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
     [CMDletBinding(SupportsShouldProcess)]
     param(
         $VerbosePreference = "Continue",
-        [Parameter(Mandatory=$True,
-                   ValueFromPipeline=$True,
-                   ValueFromPipelinebyPropertyName=$True
+        [Parameter(
+                Mandatory=$True,
+                ValueFromPipeline=$True,
+                ValueFromPipelinebyPropertyName=$True
         )]
         [string]$FirstName,
-        [Parameter(Mandatory=$True,
-                   ValueFromPipeline=$True,
-                   ValueFromPipelinebyPropertyName=$True
+        [Parameter(
+                Mandatory=$True,
+                ValueFromPipeline=$True,
+                ValueFromPipelinebyPropertyName=$True
         )]
         [string]$LastName,
-        [Parameter(Mandatory=$True,
-                   ValueFromPipeline=$True,
-                   ValueFromPipelinebyPropertyName=$True
+        [Parameter(
+                Mandatory=$True,
+                ValueFromPipeline=$True,
+                ValueFromPipelinebyPropertyName=$True
         )]
         [string]$SourceUser,
-        [Parameter(Mandatory=$True,
-                   ValueFromPipeline=$True,
-                   ValueFromPipelinebyPropertyName=$True
+        [Parameter(
+                Mandatory=$False,
+                ValueFromPipeline=$True,
+                ValueFromPipelinebyPropertyName=$True
         )]
         [array]$Groups
     )
@@ -59,16 +63,9 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
     }
 
     PROCESS {
-        $pw = Invoke-RandomPassword `
-                -Length 10 #Calls password thats 10 characters long
+        $pw = Invoke-RandomPassword -Length 10 | ConvertTo-SecureString -AsPlainText -Force #Converts the pw to a securestring
         #
-        $spw = ConvertTo-SecureString $pw `
-                -AsPlainText `
-                -Force #Converts the pw to a securestring
-        #
-        $SourceUserInfo = Get-ADUser `
-                -Identity $SourceUser `
-                -Properties Title,Department #Applies the SourceUserInfo to progagate the Title, Department, and Path.
+        $SourceUserInfo = Get-ADUser -Identity $SourceUser -Properties Title,Department #Applies the SourceUserInfo to progagate the Title, Department, and Path.
         #
         $SourceDistinguishedName = (($SourceUserInfo.Distinguishedname).split(',')) #Calls the DistinguishedName of the SourceUser to a variable and splits each section into objects
         #
@@ -78,10 +75,7 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
         #
         $FirstLast = $FirstName[0] + $LastName #Joins the first letter of firstname and lastname
         #
-        $Sourceusergroups = Get-ADPrincipalGroupMembership `
-                                -Identity $SourceUser |
-                                        Select-Object `
-                                                -ExpandProperty SamAccountName #Creates a joined string of all of the groups the SourceUser is a member of.
+        
         $userparam = @{
                 Name            = $FirstLast
                 SamAccountName  = $FirstLast
@@ -91,48 +85,51 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
                 Department      = $SourceUserInfo.Department
                 Path            = $Path
                 Email           = "$($FirstLast)@mfgwickedit.onmicrosoft.com"
-                AccountPassword = $spw
+                AccountPassword = $pw
                 Enabled         = $true
         }
         #
-        New-ADUser @userParam #Actual use of New-ADUser with all parameters
-        #
-        $properties = [ordered]@{
-                Name        = $FirstName + ' ' + $LastName #Display a list of user properties.
-                Title       = $SourceUserInfo.Title
-                Department  = $SourceUserInfo.Department
-                Password    = $pw
-                Email       = $email
-                Groups      = (($sourceusergroups) + ($groups)) -Join ', '
-                SourceUser  = $SourceUser
+        try {
+                $NewUser = New-ADUser @userParam -ErrorAction Stop #Actual use of New-ADUser with all parameters
+                Write-Verbose "Created user account for '$FirstLast'"
+                $Sourceusergroups = Get-ADPrincipalGroupMembership -Identity $SourceUser | Select-Object -ExpandProperty SamAccountName #Creates a joined string of all of the groups the SourceUser is a member of.
+                foreach ($sourceusergroup in $sourceusergroups) {
+                        try {
+                                Add-ADPrincipalGroupMembership -Identity $FirstLast -MemberOf $sourceusergroup -ErrorAction Continue
+                                Write-Verbose "Group '$Sourceusergroup' added to user '$FirstLast' from the source user '$sourceuser'."
+                        } #adds groups from the source user
+                        catch {
+                                Write-Error "Unable to add group '$sourceusergroup' to user '$FirstLast' from source user '$sourceuser'. : $_"
+                        }
+                }
+                #
+                if ($Groups) { #checks for values in groups# 
+                        foreach ($group in $groups) {
+                                try {
+                                        Add-ADPrincipalGroupMembership -Identity $FirstLast -MemberOf $Group -ErrorAction Continue #allows for seperatre groups to be added
+                                        Write-Verbose "Group '$group' added to user '$FirstLast'."
+                                }
+                                catch {
+                                        Write-Error "Unable to add group '$group' to user '$FirstLast'. : $_"
+                                }
+                        }
+                }
+        }
+        catch {
+                Write-Error "Unable to create user account for '$FirstLast'. : $_"
         }
         #
-        $obj = New-Object `
-                    -TypeName psobject `
-                    -Property $properties #Passes properties to variable
+        
         #
+        #
+        Write-Output $NewUser # writes the output of the user properties
+        $pw | clip #passes the password to the clipboard
     }
     END {
-        if ($Groups -ne $null) { #checks for values in groups# 
-                Add-ADPrincipalGroupMembership `
-                     -Identity $FirstLast `
-                     -MemberOf $Groups #allows for seperatre groups to be added
-            }
-        #
-        if ($SourceUser -ne $null) {  #checks for value in Sourceuser#
-                Add-ADPrincipalGroupMembership `
-                    -Identity $FirstLast `
-                    -MemberOf $Sourceusergroups `
-                    -ErrorAction SilentlyContinue #adds groups from the source user
-        }
-        #
-        Write-Output $obj # writes the output of the user properties
-        $pw | clip #passes the password to the clipboard
-        
     }
 }
-    New-Alias iadu Invoke-NewADUser
-    Export-ModuleMember -Function Invoke-NewADUser
+    New-Alias iadu New-CADUser
+    Export-ModuleMember -Function New-CADUser
     Export-ModuleMember -Alias iadu
 <#
 ###########################################################################

@@ -1,47 +1,54 @@
+$vault      = "C:\ADMIN\The_Vault"
+$mgTools    = "$vault\MG-Tools"
+$transcripts= "$vault\PS_Transcripts"
+$date       = Get-Date
+
 function Prompt {
         $Host.UI.RawUI.WindowTitle = Get-Location
-        $date = Get-Date
         "$($date.Hour).$($date.Minute).$($date.second) PS> "
 }
 
-$vault                  = "C:\ADMIN\The_Vault"
-$mgTools                = "$vault\MG-Tools"
-$reportingKit           = "$mgTools\reportingKit"
-$rmmKit                 = "$mgTools\rmmKit"
-$toolKit                = "$mgTools\toolKit"
-$transcripts            = "$vault\PS_Transcripts"
-
 
 function Start-Profile {
-        BEGIN {
-                $date = Get-Date | Select-Object -expandproperty 'Dayofyear'
-                Start-Transcript -Path "$transcripts\$date.dayof2023.txt" -Append
+    $VerbosePreference= 'SilentlyContinue'
+    #
+    #
+    #
+    $otherModules = 'ActiveDirectory'
+    foreach ($module in $otherModules) {
+        try {
+            Import-Module $module
         }
-        PROCESS {
-            $rmmKitModules  = Get-ChildItem $rmmKit\*
-            $toolKitModules = Get-ChildItem $toolKit\*
-            Import-Module ActiveDirectory
-            foreach ($rmmModule in $rmmKitModules) {
-                try {
-                    Import-Module $rmmModule.Fullname -ErrorAction SilentlyContinue
-                    Write-Output "$rmmModule.name has been loaded."
-                }
-                catch {
-                    Write-Output "$rmmModule.name is not ready and has not been loaded."
-                }
-
-            foreach ($toolModule in $toolKitModules) {
-                try {
-                    Import-Module $toolModule.Fullname -ErrorAction SilentlyContinue
-                    Write-Output "$toolModule.name has been loaded."
-                }
-                catch {
-                    Write-Output "$toolModule.name is not ready and has not been loaded."
-                }
-            }
+        catch {
+            Write-Error "Unable to load $module in to memory."
         }
     }
-    
-    END {Set-Location "$progressscripts"}
+    #
+    #
+    #
+    $toolkit = Get-ChildItem -Recurse -Path $mgTools -Filter "*.psm1"
+    foreach ($tool in $toolkit) {
+        try {
+            Import-Module $tool -ErrorAction SilentlyContinue
+        }
+        catch {
+            Write-Error "Unable to load $($tool.BaseName) into memory."
+        }
+    }
+    Set-Location "$progressscripts"
 }
-#Start-Profile
+Start-Profile
+
+function New-Transcript {
+    $transcriptpath = "$transcripts\$($date.DayOfYear).dayof2023.txt"
+    if ( ! (Test-Path -Path $transcriptpath)) {
+        Write-Host "Starting a new transcript for the day! Happy Labbing!" -ForegroundColor Green -BackgroundColor DarkGray
+    }
+    else{
+        Write-Host "Continuing today's session..." -ForegroundColor Green -BackgroundColor DarkGray
+    }
+    Start-Transcript -Path $transcriptpath -Append
+    #
+
+}
+New-Transcript

@@ -1,3 +1,7 @@
+<#
+Might pivot this to aid the Add-pssh module. Script is currently to specific and needs to be modularized.
+#>
+
 function Import-Dockercompose {
     param(
         $VerbosePreference = 'Continue',

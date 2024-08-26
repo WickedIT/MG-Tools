@@ -1,6 +1,9 @@
 function Get-OUDetails {
     [CmdletBinding(SupportsShouldProcess)]
-    param($VerbosePreference = "Continue")
+    param(
+        $VerbosePreference = "Continue"
+
+    )
     BEGIN {
         $computers = $comp_list 
     }
@@ -42,4 +45,4 @@ function Get-OUDetails {
     END {
     }
 }
-Get-OuDetails
+#Get-OuDetails

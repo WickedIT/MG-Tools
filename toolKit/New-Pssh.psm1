@@ -1,3 +1,7 @@
+<#
+Possibly build more functions to make push/pull of data easier
+#>
+
 function New-Pssh{
 <#
 
@@ -32,20 +36,11 @@ function New-Pssh{
             KeyFilePath = "$keyFilePath"
         }
         $SShSession = New-PsSession @SshOptions -ErrorAction Stop
-        Write-Host "SSH connection established for '$computername' and is $($SShSession.Availability)"
-        Write-Output $SShSession
+        Write-Output "SSH connection established for '$computername' and is $($SShSession.Availability)"
     }
     catch{
-        Write-Host "Connection to endpoint:'$computername' failed. Exiting..."
-        Write-Ouput $SShSession
+        Write-Error "Connection to endpoint:'$computername' failed. : $_"
         return
-    }
-    if ($SShSession.Availability -eq 'Available') {
-        $Enter = Read-Host "The session for '$computername' was created, would you like to connect now? (Y/n)"
-        if ($Enter.ToUpper() -eq 'Y') {
-            Enter-PSSession -id $SShSession.ID
-        }
-        else {return}
     }
 }
 New-Alias pssh New-Pssh

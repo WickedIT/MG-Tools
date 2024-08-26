@@ -27,7 +27,7 @@ function Invoke-RandomPassword {
                             'A','B','C','D','E','F','G','H','J','I','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
                             '!','@','#','$','%','^','&','*','(',')'
         $pw = ($characters | Get-Random -count $Length) -join ''
-        Write-Host $pw
+        Write-Output $pw
         
     }
     
