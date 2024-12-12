@@ -1,4 +1,4 @@
-function Invoke-AudioDevSwap {
+<#function Invoke-AudioDevSwap {
     $module = 'AudioDeviceCmdlets'
     if (!(Get-Module -Name $module -ListAvailable)) {#Checks that module is installed, requests permission and installs if not.
         $continue = Read-Host "The module 'AudioDeviceCmdlet' is required but not installed, would you like to install it? (y/n)"
@@ -32,7 +32,7 @@ function Invoke-AudioDevSwap {
                 Write-Error "Something went wrong : Unable to create the text file for device list storage. Make sure the user running the script has permission to create files in the directory."
                 return
             }
-            $devices= Get-AudioDevice -list | Select-Object -Property Name,ID
+            $devices= Get-AudioDevice -list | Select-Object -Property Name
             $n=0
             foreach ($device in $devices) {#Iterate through devices and print to host.
                 Write-Host "$n - '$($device.Name)'" -ForegroundColor Yellow -BackgroundColor Black
@@ -43,8 +43,8 @@ function Invoke-AudioDevSwap {
             $devTwo=Read-Host "Audio Device #2 "
             
             @(
-                $devices[$devOne].ID
-                $devices[$devTwo].ID
+                $devices[$devOne].Name
+                $devices[$devTwo].Name
             ) | Set-Content -Path $swapDevices
         }
         else {#Sources swap_devices.txt for devices and loads to variables.
@@ -56,7 +56,7 @@ function Invoke-AudioDevSwap {
                 return
             }
         }
-        $audiodev = Get-Content -Path $swapDevices | Select-Object -First 2
+        $audioDev = Get-Content -Path $swapDevices | Select-Object -First 2
         $currentPlayback = Get-AudioDevice -Playback
         try{
             if ($currentPlayback.ID -eq $audioDev[0]) {#Check if playback device is set to Dev#1 | switches to Dev#2    $newPlayback= Set-AudioDevice -ID $audioDev[1] -ErrorAction Stop
@@ -77,3 +77,19 @@ function Invoke-AudioDevSwap {
     }
 }
 #Invoke-AudioDevSwap
+#>
+
+function Set-PlaybackDev {
+    if (! (Get-Module -name AudioDeviceCmdlets)) {
+        Import-Module AudioDeviceCmdlets
+    }
+    $commDevs = Get-AudioDevice -list | where-object {($_.Type -eq "Playback") -and (($_.name -like "*dell*") -or ($_.name -like "*Logitech*"))}
+    $playback = Get-AudioDevice -playback
+    if ($commDevs[0].ID -eq $playback.ID) {
+        Set-AudioDevice -ID $commDevs[1].ID
+    }
+    else {
+        Set-AudioDevice -ID $commDevs[0].ID
+    }
+}
+Set-PlaybackDev | Out-Null

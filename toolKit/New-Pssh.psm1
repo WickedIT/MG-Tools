@@ -24,9 +24,7 @@ function New-Pssh{
         [Parameter(Position=3,
                    Mandatory=$False
         )]
-        [string]$keyFilePath="$env:USERPROFILE\.ssh\id_rsa",
-        [string]$path,
-        [string]$command
+        [string]$keyFilePath="$env:USERPROFILE\.ssh\id_rsa"
     )
     try {
         $SshOptions = @{

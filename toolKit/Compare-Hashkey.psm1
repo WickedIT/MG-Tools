@@ -9,11 +9,10 @@ function Invoke-FindFilePath {
     if ($openFileDialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
         $selectedFilePath = $openFileDialog.FileName
         Write-Output $selectedFilePath
-    } else {
-        Write-Output "No file selected."
-        return
+    } 
+    else {
+        Write-Error "No file selected."
     }
-
 }
 function Compare-Hashkey {
     $download_hash = Read-Host "Please enter the downloads expected sha256."#Queries for the expected hashkey in terminal

@@ -7,11 +7,7 @@ function Get-ADUserFailedLoginAttempts {
         )]
         $Identity
     )
-    BEGIN {}
-    PROCESS {
-        Get-Aduser -Identity $Identity -Properties badpwdcount,LastBadPasswordAttempt | Select-Object name,badpwdcount,LastBadPasswordAttempt
-    }
-    END {}
+    Get-Aduser -Identity $Identity -Properties badpwdcount,LastBadPasswordAttempt | Select-Object name,badpwdcount,LastBadPasswordAttempt
 }
 
 

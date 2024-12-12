@@ -1,6 +1,6 @@
 function Optimize-Drive {
 <#
-
+needs work
 #>
 param(
     [Parameter(
@@ -8,32 +8,33 @@ param(
         ValueFromPipeline=$True,
         ValueFromPipelineByPropertyName=$True
     )]
-    [string]$computername,
+    [string]$computername=$env:COMPUTERNAME,
     [Parameter(
         Mandatory=$false
     )]
-    [boolean]$log
+    [switch]$log
     )
     BEGIN {
         $date = Get-Date -Format "MM_DD_YYYY"
         if ($log) {
+            $logfile = "$PSScriptRoot\$date-optimize_drive_output.txt"
             try {
-                $CompDriveFull = New-Item "$PSScriptRoot\$date-drive_full.txt" -ErrorAction Continue
+                $CompDriveFull = New-Item -Path $logfile -ErrorAction Continue
+                Write-Verbose "Created file '$logfile'"
             }
             catch {
-                Write-Error "Unable to create log file. : $_"
+                Write-Error "Unable to create log file - '$logfile'. : $_"
             }
         }
     }
     PROCESS {
-        if ($computername -eq '') {
+        if ($computername -eq $env:COMPUTERNAME) {
             try {
                 $health = Get-StorageHealth -ErrorAction Stop | Where-Object -Property ID -eq "C:" | Select-Object -ExpandProperty P_FREE
                 Write-Verbose "Percent free for disk 'C' on $computername has been collected"
             }
             catch {
                 Write-Error "Unable to collect storage health for '$computername'. Please debug... : $_"
-                return
             }
             if ($health -lt 80) {
                 try {
@@ -44,7 +45,6 @@ param(
                 }
                 catch {
                     Write-Error "Unable to run the disk utility on '$computername'. Please debug : $_"
-                    return
                 }
             }
         }
@@ -55,7 +55,6 @@ param(
                 }
                 catch {
                     Write-Error "Unable to collect storage health for '$computername'. Please debug... : $_"
-                    return
                 }
                 if ($health -lt 80) {
                     try {
@@ -66,7 +65,6 @@ param(
                     }
                     catch {
                         Write-Error "Unable to run the disk utility on '$computername'. Please debug : $_"
-                        return
                     }
                 }
             }
@@ -76,8 +74,6 @@ param(
 
     }
 }
-
-
 function Set-DriveCleanupOptions{
     $CurrentItemSet = @{
         Path        = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\VolumeCaches\*'
@@ -134,7 +130,6 @@ function Set-DriveCleanupOptions{
         New-ItemProperty @newItemSet | Out-Null # applies newitemset to each folder in volumecaches
     }
 }
-
 function Invoke-DiskCleanUtil {
     param(
     [Parameter(
@@ -142,9 +137,9 @@ function Invoke-DiskCleanUtil {
         ValueFromPipeline=$True,
         ValueFromPipelineByPropertyName=$True
     )]
-    $computername
+    $computername=$env:COMPUTERNAME
     )
-    if ($computername -eq '') {
+    if ($computername -eq $env:COMPUTERNAME) {
         try {
             Set-DriveCleanupOptions -ErrorAction Stop
             Write-Verbose "Enabled all flags for CleanMgr to clear anything it can on : '$computername'"
@@ -193,5 +188,3 @@ function Invoke-DiskCleanUtil {
         }
     }
 }
-
-

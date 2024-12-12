@@ -40,7 +40,7 @@ function Start-Profile {
 Start-Profile
 
 function New-Transcript {
-    $transcriptpath = "$transcripts\$($date.DayOfYear).dayof2023.txt"
+    $transcriptpath = "$transcripts\$($date.DayOfYear).dayof_$($date.Year).txt"
     if ( ! (Test-Path -Path $transcriptpath)) {
         Write-Host "Starting a new transcript for the day! Happy Labbing!" -ForegroundColor Green -BackgroundColor DarkGray
     }

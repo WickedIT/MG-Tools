@@ -59,11 +59,7 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
         )]
         [array]$Groups
     )
-    BEGIN {
-    }
-
-    PROCESS {
-        $pw = Invoke-RandomPassword -Length 10 | ConvertTo-SecureString -AsPlainText -Force #Converts the pw to a securestring
+        $spw = Invoke-RandomPassword -Length 10 | Tee-Object -Variable pw | ConvertTo-SecureString -AsPlainText -Force #Converts the pw to a securestring
         #
         $SourceUserInfo = Get-ADUser -Identity $SourceUser -Properties Title,Department #Applies the SourceUserInfo to progagate the Title, Department, and Path.
         #
@@ -75,7 +71,7 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
         #
         $FirstLast = $FirstName[0] + $LastName #Joins the first letter of firstname and lastname
         #
-        
+
         $userparam = @{
                 Name            = $FirstLast
                 SamAccountName  = $FirstLast
@@ -84,18 +80,18 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
                 Title           = $SourceUserInfo.Title
                 Department      = $SourceUserInfo.Department
                 Path            = $Path
-                Email           = "$($FirstLast)@mfgwickedit.onmicrosoft.com"
-                AccountPassword = $pw
+                Email           = "$($FirstLast)@email.com"
+                AccountPassword = $spw
                 Enabled         = $true
         }
         #
         try {
                 $NewUser = New-ADUser @userParam -ErrorAction Stop #Actual use of New-ADUser with all parameters
                 Write-Verbose "Created user account for '$FirstLast'"
-                $Sourceusergroups = Get-ADPrincipalGroupMembership -Identity $SourceUser | Select-Object -ExpandProperty SamAccountName #Creates a joined string of all of the groups the SourceUser is a member of.
+                $Sourceusergroups = Get-ADPrincipalGroupMembership -Identity $SourceUser | Select-Object -ExpandProperty SamAccountName | Where-Object -FilterScript {"$_ -notlike 'Domain Users'"} #Creates a joined string of all of the groups the SourceUser is a member of.
                 foreach ($sourceusergroup in $sourceusergroups) {
                         try {
-                                Add-ADPrincipalGroupMembership -Identity $FirstLast -MemberOf $sourceusergroup -ErrorAction Continue
+                                Add-ADPrincipalGroupMembership -Identity $FirstLast -MemberOf $_ -ErrorAction Continue
                                 Write-Verbose "Group '$Sourceusergroup' added to user '$FirstLast' from the source user '$sourceuser'."
                         } #adds groups from the source user
                         catch {
@@ -118,15 +114,8 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
         catch {
                 Write-Error "Unable to create user account for '$FirstLast'. : $_"
         }
-        #
-        
-        #
-        #
         Write-Output $NewUser # writes the output of the user properties
         $pw | clip #passes the password to the clipboard
-    }
-    END {
-    }
 }
     New-Alias iadu New-CADUser
     Export-ModuleMember -Function New-CADUser

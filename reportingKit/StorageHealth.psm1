@@ -5,36 +5,26 @@ function Get-StorageHealth {
         ValueFromPipeline=$True,
         ValueFromPipelineByPropertyName=$True
     )]
-    $Computername
+    $Computername=$env:COMPUTERNAME
     )
-    if ($computername -eq '') {
-        try {
+    try {
+        if ($computername -eq $env:COMPUTERNAME) {
             $sysdisks = Get-CimInstance -ClassName Win32_LogicalDisk -ErrorAction Stop
             Write-Verbose "Disk information collected from '$computername'."
         }
-        catch {
-            Write-Error "Unable to collect disk info. | Please debug... : $_"
-            return
+        else {
+            if (([Net.Sockets.TCPCLient]::new()).ConnectAsync($Computername, '5985').Wait(500)) {
+                $CimSession = New-CimSession -ComputerName $computername -ErrorAction Stop
+                Write-Verbose "Started Cimsession for '$computername'."
+            }
+            $sysdisks = Get-CimInstance -CimSession $CimSession -ClassName Win32_LogicalDisk -ErrorAction Stop
         }
     }
-    else {
-        try {
-            $CimSession = New-CimSession -ComputerName $computername -ErrorAction Stop
-            Write-Verbose "Started Cimsession for '$computername'."
-            try {
-                $sysdisks = Get-CimInstance -CimSession $CimSession -ClassName Win32_LogicalDisk -ErrorAction Stop
-                Write-Verbose "Disk information collected from '$computername'."
-            }
-            catch {
-                Write-Error "Unable to collect disk info from '$computername'. | Please debug... : $_"
-                return
-            }
-        }
-        catch {
-            Write-Error "Unable to start CimSession. | Please debug... : $_"
-            return
-        }
-        finally {
+    catch {
+        Write-Error "Unable to collect disk info. | Please debug... : $_"
+    }
+    finally {
+        if($null -ne $CimSession) {
             $CimSession | Remove-CimSession
             Write-Verbose "Removed Cimsession from cache for '$computername'."
         }
@@ -42,9 +32,9 @@ function Get-StorageHealth {
     foreach ($disk in $sysdisks) {
         $avail = ($disk.FreeSpace / $disk.Size) * 100 -as [int]
         $properties = [Ordered]@{
-            DEV     = "$($CimSession.Computername)"
+            DEV     = "$($Computername)"
             ID      = "$($disk.DeviceID)"
-            P_FREE  = "$avail"
+            P_FREE  = "$avail %"
             FS      = "$($disk.FileSystem)"
         }
         $obj = New-Object -TypeName psobject -Property $properties

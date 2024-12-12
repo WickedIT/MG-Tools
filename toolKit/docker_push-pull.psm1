@@ -85,7 +85,7 @@ function Export-Dockercompose {
         $stack
     )
     $date = Get-Date
-    $local_repo = "C:\admin\The_Vault\DockerMFG\"
+    $local_repo = "C:\admin\The_Vault\DockerMFG"
     $local_dest = "$local_repo\ubuntu_pull\$computername\$($date.Dayofyear)\"
     if (Test-Path $local_dest){
     }
