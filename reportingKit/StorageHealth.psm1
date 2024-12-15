@@ -13,9 +13,12 @@ function Get-StorageHealth {
             Write-Verbose "Disk information collected from '$computername'."
         }
         else {
-            if (([Net.Sockets.TCPCLient]::new()).ConnectAsync($Computername, '5985').Wait(500)) {
+            if (([Net.Sockets.TCPCLient]::new()).ConnectAsync($Computername,5985).Wait(500)) {
                 $CimSession = New-CimSession -ComputerName $computername -ErrorAction Stop
                 Write-Verbose "Started Cimsession for '$computername'."
+            }
+            else {
+                throw "WinRM not enabled. Please resolve."
             }
             $sysdisks = Get-CimInstance -CimSession $CimSession -ClassName Win32_LogicalDisk -ErrorAction Stop
         }

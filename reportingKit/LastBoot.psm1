@@ -21,22 +21,18 @@ function Get-PCUptime {
     }
     PROCESS {
         try {
-            if ($computername -eq "$env:COMPUTERNAME") {$local = $true}
-            else{$local = $false}
-            if ($local) {
+            if ($computername -eq "$env:COMPUTERNAME") {
                 $lastboot = (Get-CimInstance -ClassName Win32_OperatingSystem -ErrorAction Stop).LastBootUpTime
                 Write-Verbose "Collected OS info for '$Computername'..."
             }
             else {
-                try {
-                    if (([Net.Sockets.TCPCLient]::new()).ConnectAsync($Computername, '5985').Wait(500)) {
-                        Write-Verbose "Attempting to open a CimSession to the remote computer '$computername'..."
-                        $session = New-CimSession -ComputerName $computername -Credential $credential -ErrorAction Stop
-                        $lastboot = (Get-CimInstance -CimSession $session -ClassName Win32_OperatingSystem -ErrorAction Stop).LastBootUpTime
-                    }
+                if (([Net.Sockets.TCPCLient]::new()).ConnectAsync($Computername, '5985').Wait(500)) {
+                    Write-Verbose "Attempting to open a CimSession to the remote computer '$computername'..."
+                    $session = New-CimSession -ComputerName $computername -Credential $credential -ErrorAction Stop
+                    $lastboot = (Get-CimInstance -CimSession $session -ClassName Win32_OperatingSystem -ErrorAction Stop).LastBootUpTime
                 }
-                catch {
-                    Write-Error "Unable to access remote computer : $_"
+                else {
+                    throw "$_"
                 }
             }
             $uptime = $date - $lastboot
@@ -56,14 +52,13 @@ function Get-PCUptime {
                 Status       = "Unavailable"
             }
         }
-        
         finally {
             if ($session) {
                 $session | Remove-CimSession
             }
-        }
-        $obj = New-Object -TypeName psobject -Property $objProperties
-        $obj | Tee-Object -Variable lastBootLogs | Write-Output     
+            $obj = New-Object -TypeName psobject -Property $objProperties
+            $obj | Tee-Object -Variable lastBootLogs | Write-Output 
+        }    
     }
     END {
         if ($Log) {

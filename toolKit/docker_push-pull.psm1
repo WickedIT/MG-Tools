@@ -44,11 +44,10 @@ function Import-Dockercompose {
             KeyFilePath= "$env:USERPROFILE\.ssh\id_rsa"
         }
         $SShSession = New-PsSession @SshOptions -ErrorAction Stop
-        Write-Host "SSH established for '$computername' and is $($SShSession.Availability)"
+        Write-Output "SSH established for '$computername' and is $($SShSession.Availability)"
     }
     catch{
-        Write-Host "Connection to endpoint:'$computername' failed. Exiting..."
-        return
+        Write-Error "Connection to endpoint:'$computername' failed. Exiting... : $_"
     }
     try {
         Copy-Item $local_dest -Destination $remote_dest -ToSession $SShSession

@@ -13,7 +13,7 @@ class Custom_Polling {
 
     [string] static Test([string]$Device) {
         $socket_Build   = [Net.Sockets.TCPClient]::new()
-        $socket_Connect = $socket_Build.ConnectAsync("$Device","22")
+        $socket_Connect = $socket_Build.ConnectAsync($Device,22)
         $state = $socket_Connect.Wait(500)
         return $state
     }

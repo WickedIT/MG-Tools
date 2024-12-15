@@ -59,33 +59,33 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
         )]
         [array]$Groups
     )
-        $spw = Invoke-RandomPassword -Length 10 | Tee-Object -Variable pw | ConvertTo-SecureString -AsPlainText -Force #Converts the pw to a securestring
-        #
-        $SourceUserInfo = Get-ADUser -Identity $SourceUser -Properties Title,Department #Applies the SourceUserInfo to progagate the Title, Department, and Path.
-        #
-        $SourceDistinguishedName = (($SourceUserInfo.Distinguishedname).split(',')) #Calls the DistinguishedName of the SourceUser to a variable and splits each section into objects
-        #
-        $First, $Rest = $SourceDistinguishedName #assigns the CN entry to the first variable and assigns the rest to the rest variable
-        #
-        $Path = $Rest -join ',' #loads the remaining objects and rejoins them to use as a path for the new user
-        #
-        $FirstLast = $FirstName[0] + $LastName #Joins the first letter of firstname and lastname
-        #
-
-        $userparam = @{
-                Name            = $FirstLast
-                SamAccountName  = $FirstLast
-                GivenName       = $FirstName
-                Surname         = $LastName
-                Title           = $SourceUserInfo.Title
-                Department      = $SourceUserInfo.Department
-                Path            = $Path
-                Email           = "$($FirstLast)@email.com"
-                AccountPassword = $spw
-                Enabled         = $true
-        }
-        #
         try {
+                $spw = Invoke-RandomPassword -Length 10 | Tee-Object -Variable pw | ConvertTo-SecureString -AsPlainText -Force #Converts the pw to a securestring
+                #
+                $SourceUserInfo = Get-ADUser -Identity $SourceUser -Properties Title,Department,Emailaddress #Applies the SourceUserInfo to progagate the Title, Department, and Path.
+                #
+                $SourceDistinguishedName = (($SourceUserInfo.Distinguishedname).split(',')) #Calls the DistinguishedName of the SourceUser to a variable and splits each section into objects
+                #
+                $First, $Rest = $SourceDistinguishedName #assigns the CN entry to the first variable and assigns the rest to the rest variable
+                #
+                $Path = $Rest -join ',' #loads the remaining objects and rejoins them to use as a path for the new user
+                #
+                $FirstLast = $FirstName[0] + $LastName #Joins the first letter of firstname and lastname
+                #
+
+                $userparam = @{
+                        Name            = $FirstLast
+                        SamAccountName  = $FirstLast
+                        GivenName       = $FirstName
+                        Surname         = $LastName
+                        Title           = $SourceUserInfo.Title
+                        Department      = $SourceUserInfo.Department
+                        Path            = $Path
+                        Email           = "$($FirstLast)@$($SourceUserinfo.Emailaddress.split('@')[1])"
+                        AccountPassword = $spw
+                        Enabled         = $true
+                }
+                #
                 $NewUser = New-ADUser @userParam -ErrorAction Stop #Actual use of New-ADUser with all parameters
                 Write-Verbose "Created user account for '$FirstLast'"
                 $Sourceusergroups = Get-ADPrincipalGroupMembership -Identity $SourceUser | Select-Object -ExpandProperty SamAccountName | Where-Object -FilterScript {"$_ -notlike 'Domain Users'"} #Creates a joined string of all of the groups the SourceUser is a member of.
@@ -114,8 +114,10 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
         catch {
                 Write-Error "Unable to create user account for '$FirstLast'. : $_"
         }
-        Write-Output $NewUser # writes the output of the user properties
-        $pw | clip #passes the password to the clipboard
+        finally {
+                Write-Output $NewUser # writes the output of the user properties
+                $pw | clip #passes the password to the clipboard
+        }
 }
     New-Alias iadu New-CADUser
     Export-ModuleMember -Function New-CADUser

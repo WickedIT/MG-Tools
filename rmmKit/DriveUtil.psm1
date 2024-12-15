@@ -12,60 +12,41 @@ param(
     [Parameter(
         Mandatory=$false
     )]
-    [switch]$log
+    [string]$log
     )
     BEGIN {
         $date = Get-Date -Format "MM_DD_YYYY"
-        if ($log) {
-            $logfile = "$PSScriptRoot\$date-optimize_drive_output.txt"
-            try {
-                $CompDriveFull = New-Item -Path $logfile -ErrorAction Continue
-                Write-Verbose "Created file '$logfile'"
-            }
-            catch {
-                Write-Error "Unable to create log file - '$logfile'. : $_"
-            }
-        }
+        
     }
     PROCESS {
-        if ($computername -eq $env:COMPUTERNAME) {
-            try {
-                $health = Get-StorageHealth -ErrorAction Stop | Where-Object -Property ID -eq "C:" | Select-Object -ExpandProperty P_FREE
-                Write-Verbose "Percent free for disk 'C' on $computername has been collected"
-            }
-            catch {
-                Write-Error "Unable to collect storage health for '$computername'. Please debug... : $_"
-            }
+        try {
+            $health = Get-StorageHealth -computername $computername -ErrorAction Stop | Where-Object -Property ID -eq "C:" | Select-Object -ExpandProperty P_FREE
+            Write-Verbose "Percent free for disk 'C' on $computername has been collected"
             if ($health -lt 80) {
                 try {
-                    Invoke-DiskCleanUtil -ErrorAction Stop
-                    if ($health -lt 20) {
-                        $computername | Out-File -Append -FilePath $CompDriveFull
-                    }
+                    Invoke-DiskCleanUtil -computername $computername -ErrorAction Stop
                 }
                 catch {
                     Write-Error "Unable to run the disk utility on '$computername'. Please debug : $_"
                 }
             }
         }
-        else {
-            foreach ($computer in $computername) {
+        catch {
+            Write-Error "Unable to collect storage health for '$computername'. Please debug... : $_"
+        }
+        finally {
+            if ($health -lt 20) {
                 try {
-                    $health = Get-StorageHealth -computername $computer | Where-Object -Property ID -eq "C:" | Select-Object -ExpandProperty P_FREE
+                    if (($null -ne $log) -and (Test-Path -Path $log)) {
+                        $logfile = "$log\$($date)_driveFullOuput.txt"
+                        $computername | Out-File -FilePath $logfile -Append
+                    }
+                    else {
+                        throw "Please provide a valid filepath for a log file."
+                    }
                 }
                 catch {
-                    Write-Error "Unable to collect storage health for '$computername'. Please debug... : $_"
-                }
-                if ($health -lt 80) {
-                    try {
-                        Invoke-DiskCleanUtil -computername $computer
-                        if ($health -lt 20) {
-                            $computername | Out-File -Append -FilePath $CompDriveFull
-                        }
-                    }
-                    catch {
-                        Write-Error "Unable to run the disk utility on '$computername'. Please debug : $_"
-                    }
+                    Write-Error "Something went wrong, please debug : $_"
                 }
             }
         }
@@ -139,52 +120,52 @@ function Invoke-DiskCleanUtil {
     )]
     $computername=$env:COMPUTERNAME
     )
-    if ($computername -eq $env:COMPUTERNAME) {
-        try {
-            Set-DriveCleanupOptions -ErrorAction Stop
-            Write-Verbose "Enabled all flags for CleanMgr to clear anything it can on : '$computername'"
+    try { 
+        if ($computername -eq $env:COMPUTERNAME) {
             try {
-                Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:1' -WindowStyle 'Hidden' -ErrorAction Stop
-                Write-Verbose "Successfully executed CleanMgr on '$computername'."
-            }
-            catch {
-                Write-Error "Unable to start process for CleanMgr. Please debug... : $_"
-                return
-            }
-        }
-        catch {
-            Write-Error "Unable to set flags for CleanMgr to run completely. Please debug : $_"
-                return
-        }
-    }
-    else {
-        try {
-            $session = New-PSSession -ComputerName $computername
-            Write-Verbose "Opened PSSession to '$computername'."
-            try {
-                Invoke-Command -Session $session -ScriptBlock ${function:Set-DriveCleanupOptions}
+                Set-DriveCleanupOptions -ErrorAction Stop
                 Write-Verbose "Enabled all flags for CleanMgr to clear anything it can on : '$computername'"
                 try {
-                    Invoke-Command -Session $session -ScriptBlock {Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:1' -WindowStyle 'Hidden'}
-                    Write-Verbose "Successfully start CleanMgr on '$computername'."
+                    Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:1' -WindowStyle 'Hidden' -ErrorAction Stop
+                    Write-Verbose "Successfully executed CleanMgr on '$computername'."
                 }
                 catch {
-                    Write-Error "Unable to start CleanMgr on '$computername'. Please debug : $_ "
-                    return
+                    Write-Error "Unable to start process for CleanMgr. Please debug... : $_"
                 }
             }
             catch {
                 Write-Error "Unable to set flags for CleanMgr to run completely. Please debug : $_"
-                return
             }
         }
-        catch {
-            Write-Error "Unable to start a session to '$computername'. Please debug... : $_"
-            return
+        else {
+            try {
+                $session = New-PSSession -ComputerName $computername
+                Write-Verbose "Opened PSSession to '$computername'."
+                try {
+                    Invoke-Command -Session $session -ScriptBlock ${function:Set-DriveCleanupOptions}
+                    Write-Verbose "Enabled all flags for CleanMgr to clear anything it can on : '$computername'"
+                    try {
+                        Invoke-Command -Session $session -ScriptBlock {Start-Process -FilePath CleanMgr.exe -ArgumentList '/sagerun:1' -WindowStyle 'Hidden'}
+                        Write-Verbose "Successfully start CleanMgr on '$computername'."
+                    }
+                    catch {
+                        Write-Error "Unable to start CleanMgr on '$computername'. Please debug : $_ "
+                    }
+                }
+                catch {
+                    Write-Error "Unable to set flags for CleanMgr to run completely. Please debug : $_"
+                }
+            }
+            catch {
+                Write-Error "Unable to start a session to '$computername'. Please debug... : $_"
+            }
+            finally {
+                $session | Remove-PSSession
+                Write-Verbose "Removed PSSession from cache for '$computername'."
+            }
         }
-        finally {
-            $session | Remove-PSSession
-            Write-Verbose "Removed PSSession from cache for '$computername'."
-        }
+    }
+    catch {
+        Write-Error "There was an issue, please debug : $_"
     }
 }
