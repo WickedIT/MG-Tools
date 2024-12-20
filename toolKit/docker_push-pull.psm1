@@ -36,25 +36,26 @@ function Import-Dockercompose {
     Write-Output "Local dest: $local_dest"
     Write-Output "Remote dest: $remote_dest"
     Write-Output "Attempting to connect to '$computername' as '$username' in $stack"
+    [System.Management.Automation.Runspaces.PSSession]$SShSession = $null
     try {
-        $SshOptions = @{
-            Hostname= "$computername"
-            UserName= "$username"
-            Port=22
-            KeyFilePath= "$env:USERPROFILE\.ssh\id_rsa"
-        }
-        $SShSession = New-PsSession @SshOptions -ErrorAction Stop
+        $SShSession = New-Pssh -username $username -computername $computername
         Write-Output "SSH established for '$computername' and is $($SShSession.Availability)"
+        if ($($SShSession.Availability) -eq 'Available') {
+            Copy-Item $local_dest -Destination $remote_dest -ToSession $SShSession
+            #scp.exe $local_dest $username@$($computername).mfgwickedit.com:$remote_dest
+            Write-Verbose "Success:Git compose file imported to server: '$computername'"
+        }
+        else {
+            throw "Unable to access container server_$Computername : $_"
+        }
     }
     catch{
         Write-Error "Connection to endpoint:'$computername' failed. Exiting... : $_"
     }
-    try {
-        Copy-Item $local_dest -Destination $remote_dest -ToSession $SShSession
-        #scp.exe $local_dest $username@$($computername).mfgwickedit.com:$remote_dest
-        Write-Verbose "Success:Git compose file imported to server: '$computername'"
-    } catch {
-        Write-Verbose "Error:Git compose file not migrated to server: '$computername'."
+    finally {
+        if ($null -ne $SShSession) {
+            Remove-PSSession -Id $SShSession.Id
+        }
     }
 
 #scp $username@$computername.mfgwickedit.com:$pull_source $pull_destination

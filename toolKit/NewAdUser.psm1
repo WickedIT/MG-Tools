@@ -14,7 +14,7 @@ Passes the Firstname to Given Name, Name, and SamAccountName
 Passes LastName to Surname, Name, and SamAccountName
 
 .PARAMETER SourceUser
-Passes details from the source user account like the Path, Title, and Department to directly place them into the new users info.
+Passes details from the source user account like the Path, Title, Email and Department to directly place them into the new users info.
 
 .PARAMETER Groups
 Passes specific groups to be added to the new user that are outside the scope of the Sourceuser.
@@ -22,45 +22,40 @@ Passes specific groups to be added to the new user that are outside the scope of
 .EXAMPLE
 Will prompt each mandatory parameter (which is all except Groups).
 
-PS> Call-NewAduser
+PS> New-CADUser
 
 .EXAMPLE
 Add multiple users from a CSV with all mandatory parameters included.
 
-PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
+PS> Import-CSV .\users.csv | foreach-object {New-CADUser}
 
 
 #>
-    [CMDletBinding(SupportsShouldProcess)]
     param(
-        $VerbosePreference = "Continue",
         [Parameter(
                 Mandatory=$True,
-                ValueFromPipeline=$True,
                 ValueFromPipelinebyPropertyName=$True
         )]
         [string]$FirstName,
         [Parameter(
                 Mandatory=$True,
-                ValueFromPipeline=$True,
                 ValueFromPipelinebyPropertyName=$True
         )]
         [string]$LastName,
         [Parameter(
                 Mandatory=$True,
-                ValueFromPipeline=$True,
                 ValueFromPipelinebyPropertyName=$True
         )]
         [string]$SourceUser,
         [Parameter(
                 Mandatory=$False,
-                ValueFromPipeline=$True,
                 ValueFromPipelinebyPropertyName=$True
         )]
         [array]$Groups
     )
         try {
-                $spw = Invoke-RandomPassword -Length 10 | Tee-Object -Variable pw | ConvertTo-SecureString -AsPlainText -Force #Converts the pw to a securestring
+                $passwd         = Invoke-RandomPassword -Length 10
+                $sec_passwd     = ConvertTo-SecureString -AsPlainText -Force #Converts the pw to a securestring
                 #
                 $SourceUserInfo = Get-ADUser -Identity $SourceUser -Properties Title,Department,Emailaddress #Applies the SourceUserInfo to progagate the Title, Department, and Path.
                 #
@@ -70,58 +65,49 @@ PS> Import-CSV .\users.csv | foreach-object {Call-NewADUser}
                 #
                 $Path = $Rest -join ',' #loads the remaining objects and rejoins them to use as a path for the new user
                 #
-                $FirstLast = $FirstName[0] + $LastName #Joins the first letter of firstname and lastname
+                $username = $FirstName[0] + $LastName #Joins the first letter of firstname and lastname
                 #
 
                 $userparam = @{
-                        Name            = $FirstLast
-                        SamAccountName  = $FirstLast
+                        Name            = $username
+                        SamAccountName  = $username
                         GivenName       = $FirstName
                         Surname         = $LastName
                         Title           = $SourceUserInfo.Title
                         Department      = $SourceUserInfo.Department
                         Path            = $Path
-                        Email           = "$($FirstLast)@$($SourceUserinfo.Emailaddress.split('@')[1])"
-                        AccountPassword = $spw
+                        Email           = "$($username)@$($SourceUserinfo.Emailaddress.split('@')[1])"
+                        AccountPassword = $sec_passwd
                         Enabled         = $true
                 }
                 #
                 $NewUser = New-ADUser @userParam -ErrorAction Stop #Actual use of New-ADUser with all parameters
-                Write-Verbose "Created user account for '$FirstLast'"
+                Write-Host "Created user account for '$username'"
                 $Sourceusergroups = Get-ADPrincipalGroupMembership -Identity $SourceUser | Select-Object -ExpandProperty SamAccountName | Where-Object -FilterScript {"$_ -notlike 'Domain Users'"} #Creates a joined string of all of the groups the SourceUser is a member of.
                 foreach ($sourceusergroup in $sourceusergroups) {
                         try {
-                                Add-ADPrincipalGroupMembership -Identity $FirstLast -MemberOf $_ -ErrorAction Continue
-                                Write-Verbose "Group '$Sourceusergroup' added to user '$FirstLast' from the source user '$sourceuser'."
+                                Add-ADPrincipalGroupMembership -Identity $username -MemberOf $_ -ErrorAction Continue
+                                Write-Verbose "Group '$Sourceusergroup' added to user '$username' from the source user '$sourceuser'."
                         } #adds groups from the source user
                         catch {
-                                Write-Error "Unable to add group '$sourceusergroup' to user '$FirstLast' from source user '$sourceuser'. : $_"
+                                Write-Error "Unable to add group '$sourceusergroup' to user '$username' from source user '$sourceuser'. : $_"
                         }
                 }
-                #
-                if ($Groups) { #checks for values in groups# 
-                        foreach ($group in $groups) {
-                                try {
-                                        Add-ADPrincipalGroupMembership -Identity $FirstLast -MemberOf $Group -ErrorAction Continue #allows for seperatre groups to be added
-                                        Write-Verbose "Group '$group' added to user '$FirstLast'."
-                                }
-                                catch {
-                                        Write-Error "Unable to add group '$group' to user '$FirstLast'. : $_"
-                                }
+                foreach ($group in $groups) {
+                        try {
+                                Add-ADPrincipalGroupMembership -Identity $username -MemberOf $Group -ErrorAction Continue #allows for seperatre groups to be added
+                                Write-Verbose "Group '$group' added to user '$username'."
+                        }
+                        catch {
+                                Write-Error "Unable to add group '$group' to user '$username'. : $_"
                         }
                 }
         }
         catch {
-                Write-Error "Unable to create user account for '$FirstLast'. : $_"
+                Write-Error "Unable to create user account for '$username'. : $_"
         }
         finally {
                 Write-Output $NewUser # writes the output of the user properties
-                $pw | clip #passes the password to the clipboard
+                Write-Output $passwd
         }
 }
-    New-Alias iadu New-CADUser
-    Export-ModuleMember -Function New-CADUser
-    Export-ModuleMember -Alias iadu
-<#
-###########################################################################
-#>

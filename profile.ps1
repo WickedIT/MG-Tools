@@ -35,6 +35,15 @@ function Start-Profile {
             Write-Error "Unable to load $($tool.BaseName) into memory."
         }
     }
+    if (($Date.Day -eq 1) -or ($Date.Day -eq 15)) {
+        $prompt = Read-Host "It's that time of the month again, would you like to update NIX_Devices now? (y/n)"
+        if ($prompt -eq 'y') {
+            Update-NixDevices -Path "$vault\+nix_devices.txt"
+        }
+        else {
+            Write-Warning "DONT FORGET!!!"
+        }
+    }
     Set-Location "$progressscripts"
 }
 Start-Profile
