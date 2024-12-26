@@ -58,21 +58,12 @@ function Invoke-Polling {
             Write-Error "Please provide a valid path. You provided: $Path"
         }
     }
-<<<<<<< Updated upstream
     elseif ($device) {
         $obj = [Custom_Polling]::new($Device,$port)
     }
     else {
         Write-Error "Please provide a device to poll."
-=======
-    elseif ($Device) {
-        $obj = [Custom_Polling]::new($Device,$port)
     }
-    else {
-        Write-Error "Please provide a path-to-list or a device to Poll"
->>>>>>> Stashed changes
-    }
-    
     Write-Output $obj
 
 }

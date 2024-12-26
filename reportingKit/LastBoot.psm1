@@ -23,11 +23,7 @@ function Get-PCUptime {
                 Write-Verbose "Collected OS info for '$Computername'..."
             }
             else {
-<<<<<<< Updated upstream
                 if ((Invoke-Polling -Device $Computername -WINRM).Status) {
-=======
-                if ((Invoke-Polling -Device $computername -WINRM)) {
->>>>>>> Stashed changes
                     Write-Verbose "Attempting to open a CimSession to the remote computer '$computername'..."
                     $session = New-CimSession -ComputerName $computername -Credential $credential -ErrorAction Stop
                     $lastboot = (Get-CimInstance -CimSession $session -ClassName Win32_OperatingSystem -ErrorAction Stop).LastBootUpTime
