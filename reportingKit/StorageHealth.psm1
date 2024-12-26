@@ -13,7 +13,7 @@ function Get-StorageHealth {
             Write-Verbose "Disk information collected from '$computername'."
         }
         else {
-            if (([Net.Sockets.TCPCLient]::new()).ConnectAsync($Computername,5985).Wait(500)) {
+            if ((Invoke-Polling -Device $Computername -WINRM).Status) {
                 $CimSession = New-CimSession -ComputerName $computername -ErrorAction Stop
                 Write-Verbose "Started Cimsession for '$computername'."
             }

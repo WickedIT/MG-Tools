@@ -1,23 +1,20 @@
 function Get-PCUptime {
     param(
         [Parameter(
-            Mandatory=$False,
+            Position=0,
             ValueFromPipeline=$True,
             ValueFromPipelineByPropertyName=$True
         )]
         [Alias("Name")]
         $computername=$env:COMPUTERNAME,
-        [Parameter(
-            Mandatory=$False
-        )]
-        [string]$Log
+        [Parameter()]
+        [string]$Logging
     )
     #Provide easy uptime stats for localhost or remote pc's. 
     #Including day and time of last boot and hours since last boot
     BEGIN {
         #
         $date = Get-Date
-        $lastBootLogs = @()
     }
     PROCESS {
         try {
@@ -26,7 +23,7 @@ function Get-PCUptime {
                 Write-Verbose "Collected OS info for '$Computername'..."
             }
             else {
-                if (([Net.Sockets.TCPCLient]::new()).ConnectAsync($Computername, '5985').Wait(500)) {
+                if ((Invoke-Polling -Device $Computername -WINRM).Status) {
                     Write-Verbose "Attempting to open a CimSession to the remote computer '$computername'..."
                     $session = New-CimSession -ComputerName $computername -Credential $credential -ErrorAction Stop
                     $lastboot = (Get-CimInstance -CimSession $session -ClassName Win32_OperatingSystem -ErrorAction Stop).LastBootUpTime
@@ -57,15 +54,15 @@ function Get-PCUptime {
                 $session | Remove-CimSession
             }
             $obj = New-Object -TypeName psobject -Property $objProperties
-            $obj | Tee-Object -Variable lastBootLogs | Write-Output 
+            Write-Output $obj 
         }    
     }
     END {
-        if ($Log) {
-            if (!(Test-Path $log)) {
-                New-Item -Path $Log
+        if ($Logging) {
+            if (!(Test-Path $logging)) {
+                New-Item -Path $Logging
             }
-            $lastBootLogs | Add-Content -Path $log -Append 
+            $obj | Add-Content -Path $loging
         }
     }
 }

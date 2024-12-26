@@ -3,17 +3,11 @@ function Optimize-Drive {
 needs work
 #>
 param(
-    [Parameter(
-        Mandatory=$False,
-        ValueFromPipeline=$True,
-        ValueFromPipelineByPropertyName=$True
-    )]
+    [Parameter(ValueFromPipelineByPropertyName=$True)]
     [string]$computername=$env:COMPUTERNAME,
-    [Parameter(
-        Mandatory=$false
-    )]
-    [string]$log
-    )
+    [Parameter()]
+    [string]$Logging
+)
     BEGIN {
         $date = Get-Date -Format "MM_DD_YYYY"
         
@@ -37,9 +31,9 @@ param(
         finally {
             if ($health -lt 20) {
                 try {
-                    if (($null -ne $log) -and (Test-Path -Path $log)) {
-                        $logfile = "$log\$($date)_driveFullOuput.txt"
-                        $computername | Out-File -FilePath $logfile -Append
+                    if (($null -ne $Logging) -and (Test-Path -Path $Logging)) {
+                        $Loggingfile = "$Logging\$($date)_driveFullOuput.txt"
+                        $computername | Out-File -FilePath $Loggingfile
                     }
                     else {
                         throw "Please provide a valid filepath for a log file."
@@ -113,11 +107,7 @@ function Set-DriveCleanupOptions{
 }
 function Invoke-DiskCleanUtil {
     param(
-    [Parameter(
-        Mandatory=$False,
-        ValueFromPipeline=$True,
-        ValueFromPipelineByPropertyName=$True
-    )]
+    [Parameter(ValueFromPipelineByPropertyName=$True)]
     $computername=$env:COMPUTERNAME
     )
     try { 

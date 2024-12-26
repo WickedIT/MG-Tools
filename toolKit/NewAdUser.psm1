@@ -55,7 +55,7 @@ PS> Import-CSV .\users.csv | foreach-object {New-CADUser}
     )
         try {
                 $passwd         = Invoke-RandomPassword -Length 10
-                $sec_passwd     = ConvertTo-SecureString -AsPlainText -Force #Converts the pw to a securestring
+                $sec_passwd     = $passwd | ConvertTo-SecureString -AsPlainText -Force #Converts the pw to a securestring
                 #
                 $SourceUserInfo = Get-ADUser -Identity $SourceUser -Properties Title,Department,Emailaddress #Applies the SourceUserInfo to progagate the Title, Department, and Path.
                 #

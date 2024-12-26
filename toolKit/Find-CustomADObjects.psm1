@@ -9,8 +9,7 @@ function Find-ADuser {
     }
 }
 New-Alias fadu Find-ADUser
-Export-ModuleMember -Function Find-ADUser
-Export-ModuleMember -Alias fadu
+
 
 
 function Find-ADComputer {
@@ -24,5 +23,3 @@ function Find-ADComputer {
     }
 }
 New-Alias fadc Find-ADComputer
-Export-ModuleMember -Function Find-ADComputer
-Export-ModuleMember -Alias fadc

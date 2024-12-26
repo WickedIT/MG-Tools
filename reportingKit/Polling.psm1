@@ -47,8 +47,7 @@ function Invoke-Polling {
             try {
                 $obj = New-Object System.Collections.ArrayList
                 foreach ($Dev in $Devices) {
-                    $poll = [Custom_Polling]::new($Dev,$port)
-                    $obj.Add($poll) | Out-Null
+                    $obj.Add([Custom_Polling]::new($Dev,$port)) | Out-Null
                 }
             }
             catch {
@@ -59,8 +58,11 @@ function Invoke-Polling {
             Write-Error "Please provide a valid path. You provided: $Path"
         }
     }
-    else {
+    elseif ($device) {
         $obj = [Custom_Polling]::new($Device,$port)
+    }
+    else {
+        Write-Error "Please provide a device to poll."
     }
     
     Write-Output $obj
