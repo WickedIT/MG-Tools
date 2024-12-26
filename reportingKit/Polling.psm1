@@ -20,15 +20,15 @@ class Custom_Polling {
 }
 function Invoke-Polling {
     param (
-        [Parameter(Mandatory=$False)]
-        [ValidateScript ({Test-Path $_})]
+        [Parameter(Mandatory=$False)][ValidateScript ({Test-Path $_})]
         [System.IO.FileInfo]$Path,
-        [Parameter(
-            Mandatory=$False,
-            ValueFromPipeline=$True
-        )][string]$Device,
-        [Parameter(Mandatory=$false)][switch]$SSH,
-        [Parameter(Mandatory=$false)][switch]$WINRM
+        #
+        [Parameter(ValueFromPipeline=$True)]
+        [string]$Device,
+        #
+        [Parameter()][switch]$SSH,
+        #
+        [Parameter()][switch]$WINRM
     )
     if(($SSH) -and (! $WINRM)){$port=22}
     #
@@ -58,11 +58,19 @@ function Invoke-Polling {
             Write-Error "Please provide a valid path. You provided: $Path"
         }
     }
+<<<<<<< Updated upstream
     elseif ($device) {
         $obj = [Custom_Polling]::new($Device,$port)
     }
     else {
         Write-Error "Please provide a device to poll."
+=======
+    elseif ($Device) {
+        $obj = [Custom_Polling]::new($Device,$port)
+    }
+    else {
+        Write-Error "Please provide a path-to-list or a device to Poll"
+>>>>>>> Stashed changes
     }
     
     Write-Output $obj

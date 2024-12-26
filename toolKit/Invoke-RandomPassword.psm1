@@ -9,13 +9,13 @@ function Invoke-RandomPassword {
     Calls random string of normal characters at any length noted by the length parameter.
     
     .DESCRIPTION
-    Injects 72 characters to the Get-Random CMDlet to produce a string, then converts the string to a secure string. Once converted, the Password is displayed on the host and copied to the clipboard.
+    Injects 72 characters to the Get-Random CMDlet to produce a string.
     
     .PARAMETER Length
     Use any length you see fit, no restriction. The default is 18 characters.
     
     .EXAMPLE
-    PS>Invoke-RandomPassword -Count 10
+    PS>Invoke-RandomPassword -Length 10
     
     #>
         param(

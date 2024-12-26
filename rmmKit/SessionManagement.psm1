@@ -1,10 +1,8 @@
 function Invoke-SessionManagement {
     <#
-    manage open sessions on devices and close them if they should not be there or 
-    if they have been open to long. mostly just check is and has historically been
-    opened and (hopefully) what account was used to connect
+    Gather open cimsesion,pssession,jobs, and any other running background process and ask
+    if the user wants to lose any stored data in the obljects.
 
-    display current or last connected session (ps/cim)
-
+    https://stackoverflow.com/questions/31116756/run-script-on-powershell-exit
     #>
 }

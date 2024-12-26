@@ -16,6 +16,7 @@ function Invoke-FindFilePath {
 }
 function Compare-Hashkey {
     param(
+<<<<<<< Updated upstream
         [Parameter()]
         [string]$Path=(Invoke-FindFilePath),
         #
@@ -23,11 +24,25 @@ function Compare-Hashkey {
         [string]$ExpectedHash,
         #
         [Parameter()]
+=======
+        [Parameter(Mandatory=$False)]
+        [string]$Path=(Invoke-FindFilePath),
+        #
+        [Parameter(Mandatory=$True)]
+        [string]$ExpectedHash,
+        #
+        [Parameter(Mandatory=$False)]
+>>>>>>> Stashed changes
         [string]$Algorithm='SHA256'
     )
     try {
         $ActualHash = Get-FileHash -Path "$path" -Algorithm $Algorithm #Generates the hashkey for the selected file.
+<<<<<<< Updated upstream
         if ($ActualHash -eq $ExpectedHash) {#Displays whether hash is correct or not.
+=======
+        $compareHash = Compare-Object -ReferenceObject "$ExpectedHash" -DifferenceObject "$($ActualHash.Hash)" #Compares the two hashes.
+        if ($null -eq $compareHash) {#Displays whether hash is correct or not.
+>>>>>>> Stashed changes
             return "It's a match!"
         }
         else {
@@ -39,3 +54,7 @@ function Compare-Hashkey {
     }
 }
 New-Alias chash Compare-Hashkey
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
