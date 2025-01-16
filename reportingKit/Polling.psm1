@@ -1,3 +1,4 @@
+[NoRunspaceAffinity()]
 class Custom_Polling {
     [string]$Device
     [int]$Port

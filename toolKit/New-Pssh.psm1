@@ -26,7 +26,7 @@ function New-Pssh{
             Port        = "$port"
             KeyFilePath = "$keyFilePath"
         }
-        if ([Custom_Polling]::new($computername,$port).Status) {
+        if ((Invoke-Polling -Device $computername -SSH)) {
             $SShSession = New-PsSession @SshOptions -ErrorAction Stop
             Write-Verbose "Establishing connection to '$computername' over SSH..."
         }
