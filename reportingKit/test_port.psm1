@@ -35,15 +35,11 @@ function Test-Ports {
         Write-Error $_
     }
     finally {
-        if ($null -eq $portcheck) {
-            $openports = $portcheck | 
-            Where-Object -FilterScript {
-                $_.Status -eq 'True'
-            }
+        if ($null -ne $portcheck) {
+            Write-Output $portcheck
         }
         else {
-            $openports = "There was an issue please debug."
+            Write-Error "Something went wrong please debug."
         }
-        Write-Output $openPorts
     }
 }
