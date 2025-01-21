@@ -6,7 +6,7 @@ function Test-Ports {
     $VerbosePreference= 'Continue'
     try {
         if ((Test-Connection -ComputerName $IP -Ping -Count 1).Status -eq 'Success') {
-            $portcheck = 1..65535 | Foreach-object -ThrottleLimit 1000 -Parallel {
+            $portcheck = 1..65535 | Foreach-object -ThrottleLimit 5000 -Parallel {
                 $device = $using:IP
                 $port   = $_
                 try {
@@ -16,7 +16,7 @@ function Test-Ports {
                             Device = $device
                             Port   = $port
                             Status = 'Listening'
-                        } | Format-Table
+                        }
                     }
                     Write-Verbose "Scanning Port : $_"
                 }
