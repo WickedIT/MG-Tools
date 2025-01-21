@@ -9,15 +9,17 @@ function Test-Ports {
             $portcheck = New-Object System.Collections.ArrayList
             1..65535 | Foreach-object -ThrottleLimit 500 -Parallel  {
                     $device = $using:IP
+                    $port   = $_
                     try {
-                        $scan = [Net.Sockets.TCPClient]::new().ConnectAsync($device,$_).Wait(500)
+                        $scan = [Net.Sockets.TCPClient]::new().ConnectAsync($device,$port).Wait(500)
                         if ($scan) {
                             $status = [Ordered]@{
                                 Device = $device
-                                Status = $scan
+                                Port   = $port
+                                Status = 'Listening'
                             }
                         }
-                        $portcheck.Add($status)
+                        ($using:portcheck).Add($status)
                         Write-Verbose "Scanning Port : $_"
                     }
                     catch{
