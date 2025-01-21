@@ -8,4 +8,3 @@ function Update-NixDevices {
         $content | Out-File -Path "Z:\for_Lab\script_Outputs\+nix_updates\$($date)-$($pair.split('@')[1]).txt"
     }
 }
-Update-NixDevices -Path "C:\ADMIN\The_Vault\+nix_devices.txt"
