@@ -6,26 +6,27 @@ function Test-Ports {
     $VerbosePreference= 'Continue'
     try {
         if ((Test-Connection -ComputerName $IP -Ping -Count 1).Status -eq 'Success') {
-            $portcheck = New-Object System.Collections.ArrayList
-            1..65535 | Foreach-object -ThrottleLimit 500 -Parallel  {
-                    $device = $using:IP
-                    $port   = $_
-                    try {
-                        $scan = [Net.Sockets.TCPClient]::new().ConnectAsync($device,$port).Wait(500)
-                        if ($scan) {
-                            $status = [Ordered]@{
-                                Device = $device
-                                Port   = $port
-                                Status = 'Listening'
-                            }
-                        }
-                        ($using:portcheck).Add($status)
-                        Write-Verbose "Scanning Port : $_"
+            $portcheck = 1..65535 | Foreach-object -ThrottleLimit 1000 -Parallel {
+                $device = $using:IP
+                $port   = $_
+                try {
+                    $scan = [Net.Sockets.TCPClient]::new().ConnectAsync($device,$port).Wait(500)
+                    if ($scan) {
+                        $status = [PSCustomObject]@{
+                            Device = $device
+                            Port   = $port
+                            Status = 'Listening'
+                        } | Format-Table
                     }
-                    catch{
-                        Write-Error "Unable to scan port : $_"
-                    }
+                    Write-Verbose "Scanning Port : $_"
                 }
+                catch{
+                    Write-Error "Unable to scan port : $_"
+                }
+                finally {
+                    Write-Output $status
+                }
+            } -AsJob | Receive-Job -Wait
             Write-Verbose "The port scan is complete on host: $IP"
         }
         else {
@@ -33,15 +34,9 @@ function Test-Ports {
         }
     }
     catch {
-        $portcheck = $null
         Write-Error $_
     }
     finally {
-        if ($null -ne $portcheck) {
-            Write-Output $portcheck
-        }
-        else {
-            Write-Error "Something went wrong please debug."
-        }
+        Write-Output $portcheck
     }
 }
