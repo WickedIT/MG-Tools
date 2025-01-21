@@ -1,11 +1,13 @@
 #using module .\Polling.psm1
-function Test-Port {
+function Test-Ports {
     param(
         [Parameter(Mandatory)][string]$IP
     )
+    $VerbosePreference= 'Continue'
     try {
         if ((Test-Connection -ComputerName $IP -Ping -Count 1).Status -eq 'Success') {
-            $portcheck = 1..65535 | Foreach-object -ThrottleLimit 500 -Parallel {
+            $portcheck = New-Object System.Collections.ArrayList
+            1..65535 | Foreach-object -ThrottleLimit 500 -Parallel {
                     #Defines class
                     class Custom_Polling {
                         [string]$Device
@@ -30,9 +32,15 @@ function Test-Port {
                     #
                     #
                     #Calls and excutes class
-                    [Custom_Polling]::new("$using:IP", $_)
+                    try {
+                        $portcheck.Add([Custom_Polling]::new("$using:IP", $_))
+                        Write-Verbose "Scanning Port : $_"
+                    }
+                    catch{
+                        Write-Error "Unable to scan port : $_"
+                    }
                 }
-            Write-Verbose "The port check job has been created. Waiting for scan to complete on IP: $IP"
+            Write-Verbose "The port scan is complete on host: $IP"
         }
         else {
             throw "Unable to establish a connection to the computer : $_"
@@ -44,7 +52,7 @@ function Test-Port {
     }
     finally {
         if ($null -eq $portcheck) {
-            $portcheck | 
+            $openports = $portcheck | 
             Where-Object -FilterScript {
                 $_.Status -eq 'True'
             }
