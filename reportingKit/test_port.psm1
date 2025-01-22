@@ -10,7 +10,8 @@ function Test-Ports {
                 $device = $using:IP
                 $port   = $_
                 try {
-                    $scan = [Net.Sockets.TCPClient]::new().ConnectAsync($device,$port).Wait(1)
+                    $socket = [Net.Sockets.TCPClient]::new()
+                    $scan = $socket.ConnectAsync($device,$port).Wait(1)
                         if ($scan) {
                             $status = [PSCustomObject]@{
                                 Device = $device
@@ -25,6 +26,8 @@ function Test-Ports {
                 }
                 finally {
                     Write-Output $status
+                    $socket.Close()
+                    
                 }
             } -AsJob | Receive-Job -Wait
             Write-Verbose "The port scan is complete on host: $IP"
