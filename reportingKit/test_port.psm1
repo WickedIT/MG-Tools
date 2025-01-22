@@ -6,7 +6,7 @@ function Test-Ports {
     $VerbosePreference= 'Continue'
     try {
         if ((Test-Connection -ComputerName $IP -Ping -Count 1).Status -eq 'Success') {
-            1..65535 | Foreach-object -ThrottleLimit 50 -Parallel {
+            $portcheck = 1..65535 | Foreach-object -ThrottleLimit 50 -Parallel {
                 $device = $using:IP
                 $port   = $_
                 try {
@@ -27,7 +27,6 @@ function Test-Ports {
                 finally {
                     Write-Output $status
                     $socket.Close()
-                    
                 }
             } -AsJob | Receive-Job -Wait
             Write-Verbose "The port scan is complete on host: $IP"
@@ -38,5 +37,8 @@ function Test-Ports {
     }
     catch {
         Write-Error $_
+    }
+    finally {
+        Write-Output $portcheck
     }
 }
