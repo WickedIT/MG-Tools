@@ -6,18 +6,18 @@ function Test-Ports {
     $VerbosePreference= 'Continue'
     try {
         if ((Test-Connection -ComputerName $IP -Ping -Count 1).Status -eq 'Success') {
-            $portcheck = 1..65535 | Foreach-object -ThrottleLimit 5000 -Parallel {
+            1..65535 | Foreach-object -ThrottleLimit 50 -Parallel {
                 $device = $using:IP
                 $port   = $_
                 try {
-                    $scan = [Net.Sockets.TCPClient]::new().ConnectAsync($device,$port).Wait(500)
-                    if ($scan) {
-                        $status = [PSCustomObject]@{
-                            Device = $device
-                            Port   = $port
-                            Status = 'Listening'
+                    $scan = [Net.Sockets.TCPClient]::new().ConnectAsync($device,$port).Wait(1)
+                        if ($scan) {
+                            $status = [PSCustomObject]@{
+                                Device = $device
+                                Port   = $port
+                                Status = 'Listening'
+                            }
                         }
-                    }
                     Write-Verbose "Scanning Port : $_"
                 }
                 catch{
@@ -35,8 +35,5 @@ function Test-Ports {
     }
     catch {
         Write-Error $_
-    }
-    finally {
-        Write-Output $portcheck
     }
 }
