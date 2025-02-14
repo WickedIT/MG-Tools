@@ -34,7 +34,7 @@ function Get-StorageHealth {
     }
     foreach ($disk in $sysdisks) {
         $avail = ($disk.FreeSpace / $disk.Size) * 100 -as [int]
-        $properties = [Ordered]@{
+        $properties = [PSCustomObject]@{
             DEV     = "$($Computername)"
             ID      = "$($disk.DeviceID)"
             P_FREE  = "$avail %"

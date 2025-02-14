@@ -10,13 +10,13 @@ function New-Pssh{
         [string]$username,
         [Parameter(Position=1,Mandatory)][Alias("IP")]
         [string]$computername,
-        [Parameter(Position=2)]
+        [Parameter(Position=2,Mandatory=$False)]
         [int]$port=22,
-        [Parameter(Position=3)]
+        [Parameter(Position=3,Mandatory=$False)]
         [string]$keyFilePath="$env:USERPROFILE\.ssh\id_rsa",
-        [Parameter()]
+        [Parameter(Position=4,Mandatory=$False)]
         [switch]$Persistent,
-        [Parameter()]
+        [Parameter(Position=5,Mandatory=$False)]
         $Command
     )
     try {
@@ -26,7 +26,7 @@ function New-Pssh{
             Port        = "$port"
             KeyFilePath = "$keyFilePath"
         }
-        if ((Invoke-Polling -Device $computername -SSH)) {
+        if ((Invoke-Polling -Device $computername -SSH).Status) {
             $SShSession = New-PsSession @SshOptions -ErrorAction Stop
             Write-Verbose "Establishing connection to '$computername' over SSH..."
         }

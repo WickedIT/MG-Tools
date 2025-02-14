@@ -39,7 +39,7 @@ function Invoke-Polling {
     #
     if($null -eq $port) {
         $port=22
-        Write-Warning "No port selected, using default port '22'"
+        Write-Warning "No port selected, using default port '$port'"
     }
     Write-Verbose "Port used for device(s): '$port'"
     if($path) {
